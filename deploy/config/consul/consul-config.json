@@ -1,0 +1,22 @@
+{
+  "datacenter": "dc1",
+  "data_dir": "/consul/data",
+  "log_level": "INFO",
+  "server": true,
+  "bootstrap_expect": 1,
+  "ui_config": {
+    "enabled": true
+  },
+  "performance": {
+    "raft_multiplier": 1
+  },
+  "telemetry": {
+    "prometheus_retention_time": "30s"
+  },
+  "connect": {
+    "enabled": true
+  },
+  "ports": {
+    "grpc": 8600
+  }
+}

@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "intelligent_guidance_system_v2/service/ai/api";
+
+service AIService {
+  rpc CreateSession(CreateSessionRequest) returns (CreateSessionResponse);
+  rpc AddSymptom(AddSymptomRequest) returns (AddSymptomResponse);
+  rpc AddConversation(AddConversationRequest) returns (AddConversationResponse);
+  rpc GenerateRecommendation(GenerateRecommendationRequest) returns (GenerateRecommendationResponse);
+  rpc CompleteSession(CompleteSessionRequest) returns (CompleteSessionResponse);
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse);
+  rpc GetActiveSession(GetActiveSessionRequest) returns (GetSessionResponse);
+  rpc ProcessAIPrompt(AIPromptRequest) returns (AIPromptResponse);
+}
+
+message CreateSessionRequest {
+  string patient_id = 1;
+}
+
+message CreateSessionResponse {
+  string session_id = 1;
+  string status = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message AddSymptomRequest {
+  string session_id = 1;
+  string body_part = 2;
+  string description = 3;
+  int32 severity = 4;
+  string duration = 5;
+}
+
+message AddSymptomResponse {
+  string symptom_id = 1;
+  google.protobuf.Timestamp created_at = 2;
+}
+
+message AddConversationRequest {
+  string session_id = 1;
+  string role = 2;
+  string content = 3;
+  string type = 4;
+}
+
+message AddConversationResponse {
+  string message_id = 1;
+  int32 sequence = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message GenerateRecommendationRequest {
+  string session_id = 1;
+  int32 top_k = 2;
+  float score_threshold = 3;
+  bool include_drugs = 4;
+  bool include_doctors = 5;
+}
+
+message GenerateRecommendationResponse {
+  string session_id = 1;
+  repeated Recommendation diseases = 2;
+  repeated Recommendation doctors = 3;
+  repeated Recommendation drugs = 4;
+  repeated Recommendation departments = 5;
+  google.protobuf.Timestamp generated_at = 6;
+}
+
+message Recommendation {
+  string id = 1;
+  string type = 2;
+  string title = 3;
+  string description = 4;
+  float confidence_score = 5;
+  string confidence_level = 6;
+  string reasoning = 7;
+}
+
+message CompleteSessionRequest {
+  string session_id = 1;
+}
+
+message CompleteSessionResponse {
+  string session_id = 1;
+  string status = 2;
+  google.protobuf.Timestamp completed_at = 3;
+}
+
+message GetSessionRequest {
+  string session_id = 1;
+}
+
+message GetSessionResponse {
+  string session_id = 1;
+  string patient_id = 2;
+  string status = 3;
+  repeated Symptom symptoms = 4;
+  repeated Conversation conversations = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  google.protobuf.Timestamp completed_at = 8;
+}
+
+message Symptom {
+  string id = 1;
+  string body_part = 2;
+  string description = 3;
+  int32 severity = 4;
+  string duration = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message Conversation {
+  string id = 1;
+  string role = 2;
+  string content = 3;
+  string type = 4;
+  int32 sequence = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message ListSessionsRequest {
+  string patient_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message ListSessionsResponse {
+  repeated SessionSummary sessions = 1;
+  int32 total = 2;
+}
+
+message SessionSummary {
+  string session_id = 1;
+  string patient_id = 2;
+  string status = 3;
+  int32 symptom_count = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp completed_at = 6;
+}
+
+message GetActiveSessionRequest {
+  string patient_id = 1;
+}
+
+message AIPromptRequest {
+  string session_id = 1;
+  string prompt = 2;
+}
+
+message AIPromptResponse {
+  string session_id = 1;
+  string response = 2;
+  RecommendationSet recommendations = 3;
+}
+
+message RecommendationSet {
+  repeated Recommendation diseases = 1;
+  repeated Recommendation doctors = 2;
+  repeated Recommendation drugs = 3;
+  repeated Recommendation departments = 4;
+}

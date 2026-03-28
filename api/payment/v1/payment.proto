@@ -1,0 +1,245 @@
+syntax = "proto3";
+
+package api.payment.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/payment/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// PaymentMethod represents the payment method
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  PAYMENT_METHOD_CASH = 1;        // 现金
+  PAYMENT_METHOD_WECHAT = 2;      // 微信支付
+  PAYMENT_METHOD_ALIPAY = 3;      // 支付宝
+  PAYMENT_METHOD_CARD = 4;        // 银行卡
+  PAYMENT_METHOD_INSURANCE = 5;   // 医保
+  PAYMENT_METHOD_MIXED = 6;       // 混合支付
+}
+
+// PaymentStatus represents the status of payment
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PAYMENT_STATUS_PENDING = 1;     // 待支付
+  PAYMENT_STATUS_PROCESSING = 2;  // 处理中
+  PAYMENT_STATUS_PAID = 3;        // 已支付
+  PAYMENT_STATUS_FAILED = 4;      // 支付失败
+  PAYMENT_STATUS_REFUNDED = 5;    // 已退款
+  PAYMENT_STATUS_PARTIAL_REFUND = 6; // 部分退款
+  PAYMENT_STATUS_CANCELLED = 7;   // 已取消
+}
+
+// PaymentType represents the type of payment
+enum PaymentType {
+  PAYMENT_TYPE_UNSPECIFIED = 0;
+  PAYMENT_TYPE_REGISTRATION = 1;  // 挂号费
+  PAYMENT_TYPE_CONSULTATION = 2;  // 诊查费
+  PAYMENT_TYPE_MEDICINE = 3;      // 药品费
+  PAYMENT_TYPE_EXAMINATION = 4;   // 检查费
+  PAYMENT_TYPE_SURGERY = 5;       // 手术费
+  PAYMENT_TYPE_HOSPITALIZATION = 6; // 住院费
+  PAYMENT_TYPE_OTHER = 7;         // 其他费用
+}
+
+// Payment represents a payment record
+message Payment {
+  // Unique identifier
+  int64 id = 1;
+  // Medical record ID
+  int64 medical_id = 2;
+  // Patient ID
+  int64 patient_id = 3;
+  // Payment amount
+  double amount = 4 [(validate.rules).double.gt = 0];
+  // Payment method
+  PaymentMethod method = 5;
+  // Payment status
+  PaymentStatus status = 6;
+  // Payment type
+  PaymentType type = 7;
+  // Transaction ID from payment gateway
+  string transaction_id = 8 [(validate.rules).string.max_len = 100];
+  // Refund amount (if any)
+  double refund_amount = 9 [(validate.rules).double.gte = 0];
+  // Payment description
+  string description = 10 [(validate.rules).string.max_len = 500];
+  // Payment items breakdown
+  repeated PaymentItem items = 11;
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 12;
+  // Paid timestamp
+  google.protobuf.Timestamp paid_at = 13;
+  // Updated timestamp
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+// PaymentItem represents a payment item
+message PaymentItem {
+  // Item name
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Item amount
+  double amount = 2 [(validate.rules).double.gte = 0];
+  // Item quantity
+  int32 quantity = 3 [(validate.rules).int32.gt = 0];
+  // Unit price
+  double unit_price = 4 [(validate.rules).double.gte = 0];
+  // Item type
+  PaymentType type = 5;
+  // Reference ID (e.g., drug ID, examination ID)
+  int64 reference_id = 6;
+}
+
+// CreatePaymentRequest is the request for creating a payment
+message CreatePaymentRequest {
+  // Medical record ID
+  int64 medical_id = 1 [(validate.rules).int64.gt = 0];
+  // Patient ID
+  int64 patient_id = 2 [(validate.rules).int64.gt = 0];
+  // Payment amount
+  double amount = 3 [(validate.rules).double.gt = 0];
+  // Payment method
+  PaymentMethod method = 4 [(validate.rules).enum.defined_only = true];
+  // Payment type
+  PaymentType type = 5 [(validate.rules).enum.defined_only = true];
+  // Payment description
+  string description = 6 [(validate.rules).string.max_len = 500];
+  // Payment items
+  repeated PaymentItem items = 7;
+}
+
+// CreatePaymentResponse is the response for creating a payment
+message CreatePaymentResponse {
+  // Created payment
+  Payment payment = 1;
+  // Payment QR code URL (for WeChat/Alipay)
+  string qr_code_url = 2;
+}
+
+// ProcessPaymentRequest is the request for processing a payment
+message ProcessPaymentRequest {
+  // Payment ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Payment method (can be different from initial)
+  PaymentMethod method = 2 [(validate.rules).enum.defined_only = true];
+  // Transaction ID from payment gateway
+  string transaction_id = 3 [(validate.rules).string.max_len = 100];
+  // Payment callback data (JSON string)
+  string callback_data = 4 [(validate.rules).string.max_len = 2000];
+}
+
+// ProcessPaymentResponse is the response for processing a payment
+message ProcessPaymentResponse {
+  // Updated payment
+  Payment payment = 1;
+  // Whether payment was successful
+  bool success = 2;
+  // Error message (if failed)
+  string error_message = 3;
+}
+
+// RefundRequest is the request for refunding a payment
+message RefundRequest {
+  // Payment ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Refund amount (partial refund supported)
+  double amount = 2 [(validate.rules).double.gt = 0];
+  // Refund reason
+  string reason = 3 [(validate.rules).string = {min_len: 1, max_len: 500}];
+}
+
+// RefundResponse is the response for refunding a payment
+message RefundResponse {
+  // Updated payment
+  Payment payment = 1;
+  // Whether refund was successful
+  bool success = 2;
+  // Refund transaction ID
+  string refund_transaction_id = 3;
+}
+
+// GetPaymentRequest is the request for getting a payment
+message GetPaymentRequest {
+  // Payment ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetPaymentResponse is the response for getting a payment
+message GetPaymentResponse {
+  // Payment info
+  Payment payment = 1;
+}
+
+// ListPaymentsRequest is the request for listing payments
+message ListPaymentsRequest {
+  // Filter by patient ID (optional)
+  int64 patient_id = 1;
+  // Filter by medical ID (optional)
+  int64 medical_id = 2;
+  // Filter by status (optional)
+  PaymentStatus status = 3;
+  // Filter by type (optional)
+  PaymentType type = 4;
+  // Start date filter (optional)
+  google.protobuf.Timestamp start_date = 5;
+  // End date filter (optional)
+  google.protobuf.Timestamp end_date = 6;
+  // Page number (1-indexed)
+  int32 page = 7 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 8 [(validate.rules).int32 = {gte: 1, lte: 100}];
+}
+
+// ListPaymentsResponse is the response for listing payments
+message ListPaymentsResponse {
+  // List of payments
+  repeated Payment payments = 1;
+  // Total count
+  int64 total = 2;
+  // Current page
+  int32 page = 3;
+  // Page size
+  int32 page_size = 4;
+}
+
+// PaymentService provides payment management operations
+service PaymentService {
+  // CreatePayment creates a new payment record
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/payments"
+      body: "*"
+    };
+  }
+
+  // ProcessPayment processes a pending payment
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/payments/{id}/process"
+      body: "*"
+    };
+  }
+
+  // Refund refunds a payment (full or partial)
+  rpc Refund(RefundRequest) returns (RefundResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/payments/{id}/refund"
+      body: "*"
+    };
+  }
+
+  // GetPayment retrieves a payment by ID
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/payments/{id}"
+    };
+  }
+
+  // ListPayments lists payments with pagination
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/payments"
+    };
+  }
+}

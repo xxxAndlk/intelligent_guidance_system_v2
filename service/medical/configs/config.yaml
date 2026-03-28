@@ -1,0 +1,22 @@
+server:
+  name: medical-service
+  http_port: 8004
+  grpc_port: 9004
+
+database:
+  url: root:password@tcp(localhost:3306)/medical_db?charset=utf8mb4&parseTime=True&loc=Local
+
+services:
+  patient_url: http://localhost:8002
+  doctor_url: http://localhost:8003
+  department_url: http://localhost:8005
+  payment_url: http://localhost:8010
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+log:
+  level: info
+  format: json

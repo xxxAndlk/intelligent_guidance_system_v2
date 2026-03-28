@@ -1,0 +1,283 @@
+syntax = "proto3";
+
+package api.file.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/file/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+
+// FileType represents the type of file
+enum FileType {
+  FILE_TYPE_UNSPECIFIED = 0;
+  FILE_TYPE_IMAGE = 1;       // 图片
+  FILE_TYPE_DOCUMENT = 2;     // 文档
+  FILE_TYPE_VIDEO = 3;       // 视频
+  FILE_TYPE_AUDIO = 4;       // 音频
+  FILE_TYPE_MEDICAL = 5;     // 医疗文件
+  FILE_TYPE_REPORT = 6;      // 报告
+  FILE_TYPE_PRESCRIPTION = 7; // 处方
+  FILE_TYPE_OTHER = 8;       // 其他
+}
+
+// FileStatus represents the status of file
+enum FileStatus {
+  FILE_STATUS_UNSPECIFIED = 0;
+  FILE_STATUS_UPLOADING = 1;  // 上传中
+  FILE_STATUS_ACTIVE = 2;      // 可用
+  FILE_STATUS_DELETED = 3;     // 已删除
+  FILE_STATUS_ERROR = 4;       // 上传失败
+}
+
+// FileInfo represents file metadata
+message FileInfo {
+  // Unique identifier
+  int64 id = 1;
+  // File name
+  string name = 2 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  // Original file name
+  string original_name = 3 [(validate.rules).string.max_len = 255];
+  // File URL
+  string url = 4;
+  // File size in bytes
+  int64 size = 5 [(validate.rules).int64.gte = 0];
+  // MIME type
+  string mime_type = 6 [(validate.rules).string.max_len = 100];
+  // File extension
+  string extension = 7 [(validate.rules).string.max_len = 20];
+  // File type
+  FileType type = 8;
+  // File status
+  FileStatus status = 9;
+  // MD5 hash
+  string md5 = 10 [(validate.rules).string.max_len = 32];
+  // Uploader user ID
+  int64 uploader_id = 11;
+  // Reference ID (e.g., medical record ID)
+  int64 reference_id = 12;
+  // Reference type (e.g., "medical_record", "patient")
+  string reference_type = 13 [(validate.rules).string.max_len = 50];
+  // Storage path
+  string storage_path = 14;
+  // Description
+  string description = 15 [(validate.rules).string.max_len = 500];
+  // Uploaded timestamp
+  google.protobuf.Timestamp uploaded_at = 16;
+  // Updated timestamp
+  google.protobuf.Timestamp updated_at = 17;
+}
+
+// UploadFileRequest is the request for uploading a file
+message UploadFileRequest {
+  // File name
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  // Original file name
+  string original_name = 2 [(validate.rules).string.max_len = 255];
+  // File content (base64 encoded)
+  bytes content = 3;
+  // MIME type
+  string mime_type = 4 [(validate.rules).string.max_len = 100];
+  // File type
+  FileType type = 5 [(validate.rules).enum.defined_only = true];
+  // Uploader user ID
+  int64 uploader_id = 6 [(validate.rules).int64.gt = 0];
+  // Reference ID (optional)
+  int64 reference_id = 7;
+  // Reference type (optional)
+  string reference_type = 8 [(validate.rules).string.max_len = 50];
+  // Description (optional)
+  string description = 9 [(validate.rules).string.max_len = 500];
+}
+
+// UploadFileResponse is the response for uploading a file
+message UploadFileResponse {
+  // Uploaded file info
+  FileInfo file_info = 1;
+  // Upload URL (for client-side upload)
+  string upload_url = 2;
+}
+
+// DownloadFileRequest is the request for downloading a file
+message DownloadFileRequest {
+  // File ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Whether to get download URL only
+  bool url_only = 2;
+}
+
+// DownloadFileResponse is the response for downloading a file
+message DownloadFileResponse {
+  // File info
+  FileInfo file_info = 1;
+  // File content (if not url_only)
+  bytes content = 2;
+  // Download URL (if url_only)
+  string download_url = 3;
+}
+
+// DeleteFileRequest is the request for deleting a file
+message DeleteFileRequest {
+  // File ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// DeleteFileResponse is the response for deleting a file
+message DeleteFileResponse {
+  // Whether deletion was successful
+  bool success = 1;
+}
+
+// GetFileInfoRequest is the request for getting file info
+message GetFileInfoRequest {
+  // File ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetFileInfoResponse is the response for getting file info
+message GetFileInfoResponse {
+  // File info
+  FileInfo file_info = 1;
+}
+
+// ListFilesRequest is the request for listing files
+message ListFilesRequest {
+  // Filter by uploader ID (optional)
+  int64 uploader_id = 1;
+  // Filter by reference ID (optional)
+  int64 reference_id = 2;
+  // Filter by reference type (optional)
+  string reference_type = 3 [(validate.rules).string.max_len = 50];
+  // Filter by file type (optional)
+  FileType type = 4;
+  // Filter by status (optional)
+  FileStatus status = 5;
+  // Page number (1-indexed)
+  int32 page = 6 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 7 [(validate.rules).int32 = {gte: 1, lte: 100}];
+}
+
+// ListFilesResponse is the response for listing files
+message ListFilesResponse {
+  // List of file info
+  repeated FileInfo files = 1;
+  // Total count
+  int64 total = 2;
+  // Current page
+  int32 page = 3;
+  // Page size
+  int32 page_size = 4;
+}
+
+// GetUploadUrlRequest is the request for getting presigned upload URL
+message GetUploadUrlRequest {
+  // File name
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  // MIME type
+  string mime_type = 2 [(validate.rules).string.max_len = 100];
+  // File type
+  FileType type = 3 [(validate.rules).enum.defined_only = true];
+  // Uploader user ID
+  int64 uploader_id = 4 [(validate.rules).int64.gt = 0];
+  // Reference ID (optional)
+  int64 reference_id = 5;
+  // Reference type (optional)
+  string reference_type = 6 [(validate.rules).string.max_len = 50];
+}
+
+// GetUploadUrlResponse is the response for getting presigned upload URL
+message GetUploadUrlResponse {
+  // Upload URL
+  string upload_url = 1;
+  // File key/path
+  string file_key = 2;
+  // Expiration time in seconds
+  int64 expires_in = 3;
+}
+
+// ConfirmUploadRequest is the request for confirming upload completion
+message ConfirmUploadRequest {
+  // File key from GetUploadUrl
+  string file_key = 1 [(validate.rules).string = {min_len: 1}];
+  // File name
+  string name = 2 [(validate.rules).string = {min_len: 1, max_len: 255}];
+  // Original file name
+  string original_name = 3 [(validate.rules).string.max_len = 255];
+  // File size
+  int64 size = 4 [(validate.rules).int64.gte = 0];
+  // MIME type
+  string mime_type = 5 [(validate.rules).string.max_len = 100];
+  // File type
+  FileType type = 6 [(validate.rules).enum.defined_only = true];
+  // Uploader user ID
+  int64 uploader_id = 7 [(validate.rules).int64.gt = 0];
+  // Reference ID (optional)
+  int64 reference_id = 8;
+  // Reference type (optional)
+  string reference_type = 9 [(validate.rules).string.max_len = 50];
+  // Description (optional)
+  string description = 10 [(validate.rules).string.max_len = 500];
+}
+
+// ConfirmUploadResponse is the response for confirming upload completion
+message ConfirmUploadResponse {
+  // Created file info
+  FileInfo file_info = 1;
+}
+
+// FileService provides file management operations
+service FileService {
+  // UploadFile uploads a file (direct upload)
+  rpc UploadFile(UploadFileRequest) returns (UploadFileResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/files"
+      body: "*"
+    };
+  }
+
+  // DownloadFile downloads a file
+  rpc DownloadFile(DownloadFileRequest) returns (DownloadFileResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/files/{id}/download"
+    };
+  }
+
+  // DeleteFile deletes a file
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/files/{id}"
+    };
+  }
+
+  // GetFileInfo retrieves file metadata
+  rpc GetFileInfo(GetFileInfoRequest) returns (GetFileInfoResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/files/{id}"
+    };
+  }
+
+  // ListFiles lists files with pagination
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/files"
+    };
+  }
+
+  // GetUploadUrl gets a presigned URL for client-side upload
+  rpc GetUploadUrl(GetUploadUrlRequest) returns (GetUploadUrlResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/files/upload-url"
+      body: "*"
+    };
+  }
+
+  // ConfirmUpload confirms completion of client-side upload
+  rpc ConfirmUpload(ConfirmUploadRequest) returns (ConfirmUploadResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/files/confirm"
+      body: "*"
+    };
+  }
+}

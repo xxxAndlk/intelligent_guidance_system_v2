@@ -1,0 +1,237 @@
+syntax = "proto3";
+
+package api.drug.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/drug/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// DrugCategory represents the category of drug
+enum DrugCategory {
+  DRUG_CATEGORY_UNSPECIFIED = 0;
+  DRUG_CATEGORY_PRESCRIPTION = 1;    // 处方药
+  DRUG_CATEGORY_OTC = 2;             // 非处方药
+  DRUG_CATEGORY_CHINESE = 3;         // 中药
+  DRUG_CATEGORY_WESTERN = 4;         // 西药
+  DRUG_CATEGORY_BIOLOGICAL = 5;      // 生物制品
+  DRUG_CATEGORY_DEVICE = 6;          // 医疗器械
+}
+
+// DrugUnit represents the unit of drug
+enum DrugUnit {
+  DRUG_UNIT_UNSPECIFIED = 0;
+  DRUG_UNIT_TABLET = 1;      // 片
+  DRUG_UNIT_CAPSULE = 2;     // 粒
+  DRUG_UNIT_BOTTLE = 3;      // 瓶
+  DRUG_UNIT_BOX = 4;         // 盒
+  DRUG_UNIT_BAG = 5;         // 袋
+  DRUG_UNIT_VIAL = 6;        // 支
+  DRUG_UNIT_TUBE = 7;        // 管
+}
+
+// Drug represents a drug entity
+message Drug {
+  // Unique identifier
+  int64 id = 1;
+  // Drug name
+  string name = 2 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Drug description
+  string description = 3 [(validate.rules).string.max_len = 1000];
+  // Unit price
+  double price = 4 [(validate.rules).double.gte = 0];
+  // Quantity in stock
+  int32 quantity_in_stock = 5 [(validate.rules).int32.gte = 0];
+  // Drug category
+  DrugCategory category = 6;
+  // Drug unit
+  DrugUnit unit = 7;
+  // Usage method / instructions
+  string use_method = 8 [(validate.rules).string.max_len = 500];
+  // Expiration date
+  google.protobuf.Timestamp expiration_date = 9;
+  // Manufacturer
+  string manufacturer = 10 [(validate.rules).string.max_len = 200];
+  // Specification
+  string specification = 11 [(validate.rules).string.max_len = 100];
+  // Barcode
+  string barcode = 12 [(validate.rules).string.max_len = 50];
+  // Minimum stock threshold
+  int32 min_stock = 13 [(validate.rules).int32.gte = 0];
+  // Status: 0-inactive, 1-active
+  int32 status = 14;
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 15;
+  // Updated timestamp
+  google.protobuf.Timestamp updated_at = 16;
+}
+
+// GetDrugRequest is the request for getting a drug
+message GetDrugRequest {
+  // Drug ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetDrugResponse is the response for getting a drug
+message GetDrugResponse {
+  // Drug info
+  Drug drug = 1;
+}
+
+// ListDrugsRequest is the request for listing drugs
+message ListDrugsRequest {
+  // Filter by name (optional)
+  string name = 1;
+  // Filter by category (optional)
+  DrugCategory category = 2;
+  // Filter by status (optional)
+  int32 status = 3;
+  // Filter by low stock (optional)
+  bool low_stock_only = 4;
+  // Page number (1-indexed)
+  int32 page = 5 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 6 [(validate.rules).int32 = {gte: 1, lte: 100}];
+}
+
+// ListDrugsResponse is the response for listing drugs
+message ListDrugsResponse {
+  // List of drugs
+  repeated Drug drugs = 1;
+  // Total count
+  int64 total = 2;
+  // Current page
+  int32 page = 3;
+  // Page size
+  int32 page_size = 4;
+}
+
+// CreateDrugRequest is the request for creating a drug
+message CreateDrugRequest {
+  // Drug name
+  string name = 1 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Drug description
+  string description = 2 [(validate.rules).string.max_len = 1000];
+  // Unit price
+  double price = 3 [(validate.rules).double.gte = 0];
+  // Initial quantity in stock
+  int32 quantity_in_stock = 4 [(validate.rules).int32.gte = 0];
+  // Drug category
+  DrugCategory category = 5 [(validate.rules).enum.defined_only = true];
+  // Drug unit
+  DrugUnit unit = 6 [(validate.rules).enum.defined_only = true];
+  // Usage method / instructions
+  string use_method = 7 [(validate.rules).string.max_len = 500];
+  // Expiration date
+  google.protobuf.Timestamp expiration_date = 8;
+  // Manufacturer
+  string manufacturer = 9 [(validate.rules).string.max_len = 200];
+  // Specification
+  string specification = 10 [(validate.rules).string.max_len = 100];
+  // Barcode
+  string barcode = 11 [(validate.rules).string.max_len = 50];
+  // Minimum stock threshold
+  int32 min_stock = 12 [(validate.rules).int32.gte = 0];
+}
+
+// CreateDrugResponse is the response for creating a drug
+message CreateDrugResponse {
+  // Created drug
+  Drug drug = 1;
+}
+
+// UpdateDrugRequest is the request for updating a drug
+message UpdateDrugRequest {
+  // Drug ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Drug name (optional)
+  string name = 2 [(validate.rules).string.max_len = 200];
+  // Drug description (optional)
+  string description = 3 [(validate.rules).string.max_len = 1000];
+  // Unit price (optional)
+  double price = 4 [(validate.rules).double.gte = 0];
+  // Drug category (optional)
+  DrugCategory category = 5;
+  // Drug unit (optional)
+  DrugUnit unit = 6;
+  // Usage method / instructions (optional)
+  string use_method = 7 [(validate.rules).string.max_len = 500];
+  // Manufacturer (optional)
+  string manufacturer = 8 [(validate.rules).string.max_len = 200];
+  // Specification (optional)
+  string specification = 9 [(validate.rules).string.max_len = 100];
+  // Barcode (optional)
+  string barcode = 10 [(validate.rules).string.max_len = 50];
+  // Minimum stock threshold (optional)
+  int32 min_stock = 11 [(validate.rules).int32.gte = 0];
+  // Status (optional)
+  int32 status = 12;
+}
+
+// UpdateDrugResponse is the response for updating a drug
+message UpdateDrugResponse {
+  // Updated drug
+  Drug drug = 1;
+}
+
+// UpdateStockRequest is the request for updating drug stock
+message UpdateStockRequest {
+  // Drug ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Quantity change (positive for increase, negative for decrease)
+  int32 quantity_change = 2;
+  // Operation type: "in" for stock in, "out" for stock out
+  string operation = 3 [(validate.rules).string = {in: ["in", "out"]}];
+  // Reason for stock change
+  string reason = 4 [(validate.rules).string.max_len = 500];
+}
+
+// UpdateStockResponse is the response for updating drug stock
+message UpdateStockResponse {
+  // Updated drug
+  Drug drug = 1;
+  // Whether update was successful
+  bool success = 2;
+}
+
+// DrugService provides drug management operations
+service DrugService {
+  // GetDrug retrieves a drug by ID
+  rpc GetDrug(GetDrugRequest) returns (GetDrugResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/drugs/{id}"
+    };
+  }
+
+  // ListDrugs lists drugs with pagination
+  rpc ListDrugs(ListDrugsRequest) returns (ListDrugsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/drugs"
+    };
+  }
+
+  // CreateDrug creates a new drug
+  rpc CreateDrug(CreateDrugRequest) returns (CreateDrugResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/drugs"
+      body: "*"
+    };
+  }
+
+  // UpdateDrug updates an existing drug
+  rpc UpdateDrug(UpdateDrugRequest) returns (UpdateDrugResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/drugs/{id}"
+      body: "*"
+    };
+  }
+
+  // UpdateStock updates drug stock quantity
+  rpc UpdateStock(UpdateStockRequest) returns (UpdateStockResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/drugs/{id}/stock"
+      body: "*"
+    };
+  }
+}

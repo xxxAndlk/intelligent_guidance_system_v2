@@ -1,0 +1,49 @@
+server:
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 30s
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 30s
+
+database:
+  driver: mysql
+  host: mysql
+  port: 3306
+  user: root
+  password: root
+  database: ai_diagnosis
+
+qdrant:
+  host: qdrant
+  port: 6333
+  disease_collection: diseases
+  doctor_collection: doctors
+  drug_collection: drugs
+
+llm:
+  base_url: https://api.deepseek.com
+  api_key: ${DEEPSEEK_API_KEY}
+  model: deepseek-chat
+  embed_model: deepseek-embedding
+  max_tokens: 4096
+  temperature: 0.7
+  timeout: 60s
+
+redis:
+  host: redis
+  port: 6379
+  password: ""
+  db: 0
+
+rabbitmq:
+  host: rabbitmq
+  port: 5672
+  user: guest
+  password: guest
+  vhost: /
+
+consul:
+  host: consul
+  port: 8500
+  key: ai-service/config

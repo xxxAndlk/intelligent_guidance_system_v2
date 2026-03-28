@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+package api.surgical.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/surgical/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// SurgicalType represents the type of surgery
+enum SurgicalType {
+  SURGICAL_TYPE_UNSPECIFIED = 0;
+  SURGICAL_TYPE_MINOR = 1;      // 小手术
+  SURGICAL_TYPE_MAJOR = 2;       // 大手术
+  SURGICAL_TYPE_EMERGENCY = 3;   // 急诊手术
+  SURGICAL_TYPE_DAY = 4;         // 日间手术
+}
+
+// SurgicalStatus represents the status of surgery
+enum SurgicalStatus {
+  SURGICAL_STATUS_UNSPECIFIED = 0;
+  SURGICAL_STATUS_SCHEDULED = 1;    // 已安排
+  SURGICAL_STATUS_PREPARING = 2;    // 准备中
+  SURGICAL_STATUS_IN_PROGRESS = 3;  // 进行中
+  SURGICAL_STATUS_COMPLETED = 4;    // 已完成
+  SURGICAL_STATUS_CANCELLED = 5;     // 已取消
+  SURGICAL_STATUS_POSTPONED = 6;     // 已延期
+}
+
+// Surgical represents a surgical record
+message Surgical {
+  // Unique identifier
+  int64 id = 1;
+  // Patient ID
+  int64 patient_id = 2;
+  // Doctor IDs (main surgeon and assistants)
+  repeated int64 doctor_ids = 3;
+  // Department ID
+  int64 department_id = 4;
+  // Surgical type
+  SurgicalType type = 5;
+  // Surgical status
+  SurgicalStatus status = 6;
+  // Scheduled time
+  google.protobuf.Timestamp scheduled_time = 7;
+  // Estimated duration in minutes
+  int32 duration = 8;
+  // Actual start time
+  google.protobuf.Timestamp start_time = 9;
+  // Actual end time
+  google.protobuf.Timestamp end_time = 10;
+  // Operating room
+  string operating_room = 11 [(validate.rules).string.max_len = 50];
+  // Surgical name
+  string name = 12 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Pre-operative diagnosis
+  string pre_diagnosis = 13 [(validate.rules).string.max_len = 1000];
+  // Post-operative diagnosis
+  string post_diagnosis = 14 [(validate.rules).string.max_len = 1000];
+  // Surgical notes
+  string notes = 15 [(validate.rules).string.max_len = 2000];
+  // Anesthesia type
+  string anesthesia_type = 16 [(validate.rules).string.max_len = 50];
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 17;
+  // Updated timestamp
+  google.protobuf.Timestamp updated_at = 18;
+}
+
+// CreateSurgicalRequest is the request for creating a surgical record
+message CreateSurgicalRequest {
+  // Patient ID
+  int64 patient_id = 1 [(validate.rules).int64.gt = 0];
+  // Doctor IDs
+  repeated int64 doctor_ids = 2 [(validate.rules).repeated.min_items = 1];
+  // Department ID
+  int64 department_id = 3 [(validate.rules).int64.gt = 0];
+  // Surgical type
+  SurgicalType type = 4 [(validate.rules).enum.defined_only = true];
+  // Scheduled time
+  google.protobuf.Timestamp scheduled_time = 5;
+  // Estimated duration in minutes
+  int32 duration = 6 [(validate.rules).int32.gt = 0];
+  // Operating room
+  string operating_room = 7 [(validate.rules).string = {min_len: 1, max_len: 50}];
+  // Surgical name
+  string name = 8 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Pre-operative diagnosis
+  string pre_diagnosis = 9 [(validate.rules).string.max_len = 1000];
+  // Anesthesia type
+  string anesthesia_type = 10 [(validate.rules).string.max_len = 50];
+}
+
+// CreateSurgicalResponse is the response for creating a surgical record
+message CreateSurgicalResponse {
+  // Created surgical record
+  Surgical surgical = 1;
+}
+
+// UpdateSurgicalRequest is the request for updating a surgical record
+message UpdateSurgicalRequest {
+  // Surgical ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Doctor IDs (optional)
+  repeated int64 doctor_ids = 2;
+  // Scheduled time (optional)
+  google.protobuf.Timestamp scheduled_time = 3;
+  // Duration (optional)
+  int32 duration = 4;
+  // Operating room (optional)
+  string operating_room = 5 [(validate.rules).string.max_len = 50];
+  // Surgical name (optional)
+  string name = 6 [(validate.rules).string.max_len = 200];
+  // Pre-operative diagnosis (optional)
+  string pre_diagnosis = 7 [(validate.rules).string.max_len = 1000];
+  // Anesthesia type (optional)
+  string anesthesia_type = 8 [(validate.rules).string.max_len = 50];
+}
+
+// UpdateSurgicalResponse is the response for updating a surgical record
+message UpdateSurgicalResponse {
+  // Updated surgical record
+  Surgical surgical = 1;
+}
+
+// CompleteSurgicalRequest is the request for completing a surgery
+message CompleteSurgicalRequest {
+  // Surgical ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Post-operative diagnosis
+  string post_diagnosis = 2 [(validate.rules).string.max_len = 1000];
+  // Surgical notes
+  string notes = 3 [(validate.rules).string.max_len = 2000];
+}
+
+// CompleteSurgicalResponse is the response for completing a surgery
+message CompleteSurgicalResponse {
+  // Updated surgical record
+  Surgical surgical = 1;
+}
+
+// CancelSurgicalRequest is the request for cancelling a surgery
+message CancelSurgicalRequest {
+  // Surgical ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Cancellation reason
+  string reason = 2 [(validate.rules).string = {min_len: 1, max_len: 500}];
+}
+
+// CancelSurgicalResponse is the response for cancelling a surgery
+message CancelSurgicalResponse {
+  // Updated surgical record
+  Surgical surgical = 1;
+  // Whether cancellation was successful
+  bool success = 2;
+}
+
+// GetSurgicalRequest is the request for getting a surgical record
+message GetSurgicalRequest {
+  // Surgical ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetSurgicalResponse is the response for getting a surgical record
+message GetSurgicalResponse {
+  // Surgical record
+  Surgical surgical = 1;
+}
+
+// ListSurgicalsRequest is the request for listing surgical records
+message ListSurgicalsRequest {
+  // Filter by patient ID (optional)
+  int64 patient_id = 1;
+  // Filter by doctor ID (optional)
+  int64 doctor_id = 2;
+  // Filter by department ID (optional)
+  int64 department_id = 3;
+  // Filter by status (optional)
+  SurgicalStatus status = 4;
+  // Filter by type (optional)
+  SurgicalType type = 5;
+  // Start date filter (optional)
+  google.protobuf.Timestamp start_date = 6;
+  // End date filter (optional)
+  google.protobuf.Timestamp end_date = 7;
+  // Page number (1-indexed)
+  int32 page = 8 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 9 [(validate.rules).int32 = {gte: 1, lte: 100}];
+}
+
+// ListSurgicalsResponse is the response for listing surgical records
+message ListSurgicalsResponse {
+  // List of surgical records
+  repeated Surgical surgicals = 1;
+  // Total count
+  int64 total = 2;
+  // Current page
+  int32 page = 3;
+  // Page size
+  int32 page_size = 4;
+}
+
+// SurgicalService provides surgical management operations
+service SurgicalService {
+  // CreateSurgical creates a new surgical record
+  rpc CreateSurgical(CreateSurgicalRequest) returns (CreateSurgicalResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/surgicals"
+      body: "*"
+    };
+  }
+
+  // UpdateSurgical updates an existing surgical record
+  rpc UpdateSurgical(UpdateSurgicalRequest) returns (UpdateSurgicalResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/surgicals/{id}"
+      body: "*"
+    };
+  }
+
+  // CompleteSurgical marks a surgery as completed
+  rpc CompleteSurgical(CompleteSurgicalRequest) returns (CompleteSurgicalResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/surgicals/{id}/complete"
+      body: "*"
+    };
+  }
+
+  // CancelSurgical cancels a scheduled surgery
+  rpc CancelSurgical(CancelSurgicalRequest) returns (CancelSurgicalResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/surgicals/{id}/cancel"
+      body: "*"
+    };
+  }
+
+  // GetSurgical retrieves a surgical record by ID
+  rpc GetSurgical(GetSurgicalRequest) returns (GetSurgicalResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/surgicals/{id}"
+    };
+  }
+
+  // ListSurgicals lists surgical records with pagination
+  rpc ListSurgicals(ListSurgicalsRequest) returns (ListSurgicalsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/surgicals"
+    };
+  }
+}

@@ -1,0 +1,264 @@
+syntax = "proto3";
+
+package api.medical.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/medical/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+// MedicalStatus represents the status of a medical record
+enum MedicalStatus {
+  MEDICAL_STATUS_UNSPECIFIED = 0;
+  REGISTERING = 1;   // 挂号中
+  QUEUING = 2;       // 排队中
+  DIAGNOSING = 3;    // 诊断中
+  OPERATING = 4;     // 手术中
+  COMPLETED = 5;     // 已完成
+  CANCELLED = 6;     // 已取消
+}
+
+// MedicalRecord represents a medical record entity
+message MedicalRecord {
+  int64 id = 1;
+  string medical_number = 2;      // 病历号
+  int64 patient_id = 3;           // 患者ID
+  int64 doctor_id = 4;            // 医生ID
+  int64 department_id = 5;        // 科室ID
+  MedicalStatus status = 6;       // 状态
+  string symptom = 7;             // 症状描述
+  string diagnosis = 8;           // 诊断结果
+  string treatment_plan = 9;     // 治疗方案
+  repeated DiseaseItem diseases = 10;      // 疾病列表
+  repeated PrescriptionItem prescriptions = 11; // 处方列表
+  PaymentInfo payment = 12;       // 支付信息
+  repeated StatusChange status_history = 13; // 状态变更历史
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// DiseaseItem represents a disease diagnosis item
+message DiseaseItem {
+  int64 disease_id = 1;           // 疾病ID
+  string disease_name = 2;        // 疾病名称
+  string symptoms = 3;            // 症状
+  string diagnosis = 4;           // 诊断说明
+}
+
+// PrescriptionItem represents a prescription drug item
+message PrescriptionItem {
+  int64 drug_id = 1;              // 药品ID
+  string drug_name = 2;           // 药品名称
+  int32 quantity = 3;             // 数量
+  double price = 4;               // 单价
+  string usage = 5;               // 用法用量
+}
+
+// PaymentInfo represents payment information
+message PaymentInfo {
+  double amount = 1;              // 金额
+  string method = 2;               // 支付方式
+  string status = 3;              // 支付状态
+  google.protobuf.Timestamp pay_time = 4; // 支付时间
+}
+
+// StatusChange represents a status change record
+message StatusChange {
+  MedicalStatus from_status = 1;  // 原状态
+  MedicalStatus to_status = 2;    // 新状态
+  google.protobuf.Timestamp time = 3; // 变更时间
+  int64 operator_id = 4;          // 操作人ID
+  string reason = 5;              // 变更原因
+}
+
+// CreateMedicalRecordRequest is the request for creating a medical record
+message CreateMedicalRecordRequest {
+  string medical_number = 1;
+  int64 patient_id = 2;
+  int64 doctor_id = 3;
+  int64 department_id = 4;
+  string symptom = 5;
+}
+
+// CreateMedicalRecordReply is the response for creating a medical record
+message CreateMedicalRecordReply {
+  MedicalRecord medical_record = 1;
+}
+
+// GetMedicalRecordRequest is the request for getting a medical record
+message GetMedicalRecordRequest {
+  int64 id = 1;
+}
+
+// GetMedicalRecordReply is the response for getting a medical record
+message GetMedicalRecordReply {
+  MedicalRecord medical_record = 1;
+}
+
+// UpdateMedicalRecordRequest is the request for updating a medical record
+message UpdateMedicalRecordRequest {
+  int64 id = 1;
+  string symptom = 2;
+  string diagnosis = 3;
+  string treatment_plan = 4;
+}
+
+// UpdateMedicalRecordReply is the response for updating a medical record
+message UpdateMedicalRecordReply {
+  MedicalRecord medical_record = 1;
+}
+
+// AddDiseaseRequest is the request for adding a disease diagnosis
+message AddDiseaseRequest {
+  int64 medical_record_id = 1;
+  int64 disease_id = 2;
+  string disease_name = 3;
+  string symptoms = 4;
+  string diagnosis = 5;
+}
+
+// AddDiseaseReply is the response for adding a disease diagnosis
+message AddDiseaseReply {
+  MedicalRecord medical_record = 1;
+}
+
+// AddPrescriptionRequest is the request for adding a prescription
+message AddPrescriptionRequest {
+  int64 medical_record_id = 1;
+  int64 drug_id = 2;
+  string drug_name = 3;
+  int32 quantity = 4;
+  double price = 5;
+  string usage = 6;
+}
+
+// AddPrescriptionReply is the response for adding a prescription
+message AddPrescriptionReply {
+  MedicalRecord medical_record = 1;
+}
+
+// UpdateStatusRequest is the request for updating medical record status
+message UpdateStatusRequest {
+  int64 id = 1;
+  MedicalStatus status = 2;
+  int64 operator_id = 3;
+  string reason = 4;
+}
+
+// UpdateStatusReply is the response for updating medical record status
+message UpdateStatusReply {
+  MedicalRecord medical_record = 1;
+}
+
+// CompleteMedicalRequest is the request for completing a medical record
+message CompleteMedicalRequest {
+  int64 id = 1;
+  int64 operator_id = 2;
+}
+
+// CompleteMedicalReply is the response for completing a medical record
+message CompleteMedicalReply {
+  MedicalRecord medical_record = 1;
+}
+
+// CancelMedicalRequest is the request for cancelling a medical record
+message CancelMedicalRequest {
+  int64 id = 1;
+  int64 operator_id = 2;
+  string reason = 3;
+}
+
+// CancelMedicalReply is the response for cancelling a medical record
+message CancelMedicalReply {
+  MedicalRecord medical_record = 1;
+}
+
+// ListMedicalRecordsRequest is the request for listing medical records
+message ListMedicalRecordsRequest {
+  int64 patient_id = 1;
+  int64 doctor_id = 2;
+  int64 department_id = 3;
+  MedicalStatus status = 4;
+  int32 page = 5;
+  int32 page_size = 6;
+}
+
+// ListMedicalRecordsReply is the response for listing medical records
+message ListMedicalRecordsReply {
+  repeated MedicalRecord medical_records = 1;
+  int64 total = 2;
+}
+
+// MedicalService provides medical record management operations
+service MedicalService {
+  // CreateMedicalRecord creates a new medical record
+  rpc CreateMedicalRecord(CreateMedicalRecordRequest) returns (CreateMedicalRecordReply) {
+    option (google.api.http) = {
+      post: "/api/v1/medical-records"
+      body: "*"
+    };
+  }
+
+  // GetMedicalRecord retrieves a medical record by ID
+  rpc GetMedicalRecord(GetMedicalRecordRequest) returns (GetMedicalRecordReply) {
+    option (google.api.http) = {
+      get: "/api/v1/medical-records/{id}"
+    };
+  }
+
+  // UpdateMedicalRecord updates an existing medical record
+  rpc UpdateMedicalRecord(UpdateMedicalRecordRequest) returns (UpdateMedicalRecordReply) {
+    option (google.api.http) = {
+      put: "/api/v1/medical-records/{id}"
+      body: "*"
+    };
+  }
+
+  // AddDisease adds a disease diagnosis to a medical record
+  rpc AddDisease(AddDiseaseRequest) returns (AddDiseaseReply) {
+    option (google.api.http) = {
+      post: "/api/v1/medical-records/{medical_record_id}/diseases"
+      body: "*"
+    };
+  }
+
+  // AddPrescription adds a prescription to a medical record
+  rpc AddPrescription(AddPrescriptionRequest) returns (AddPrescriptionReply) {
+    option (google.api.http) = {
+      post: "/api/v1/medical-records/{medical_record_id}/prescriptions"
+      body: "*"
+    };
+  }
+
+  // UpdateStatus updates the status of a medical record
+  rpc UpdateStatus(UpdateStatusRequest) returns (UpdateStatusReply) {
+    option (google.api.http) = {
+      put: "/api/v1/medical-records/{id}/status"
+      body: "*"
+    };
+  }
+
+  // CompleteMedical marks a medical record as completed
+  rpc CompleteMedical(CompleteMedicalRequest) returns (CompleteMedicalReply) {
+    option (google.api.http) = {
+      put: "/api/v1/medical-records/{id}/complete"
+      body: "*"
+    };
+  }
+
+  // CancelMedical cancels a medical record
+  rpc CancelMedical(CancelMedicalRequest) returns (CancelMedicalReply) {
+    option (google.api.http) = {
+      put: "/api/v1/medical-records/{id}/cancel"
+      body: "*"
+    };
+  }
+
+  // ListMedicalRecords lists medical records with pagination
+  rpc ListMedicalRecords(ListMedicalRecordsRequest) returns (ListMedicalRecordsReply) {
+    option (google.api.http) = {
+      get: "/api/v1/medical-records"
+    };
+  }
+}

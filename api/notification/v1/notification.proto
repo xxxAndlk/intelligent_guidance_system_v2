@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package api.notification.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/notification/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+
+// NotificationType represents the type of notification
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  NOTIFICATION_TYPE_SYSTEM = 1;         // 系统通知
+  NOTIFICATION_TYPE_APPOINTMENT = 2;    // 预约提醒
+  NOTIFICATION_TYPE_PAYMENT = 3;        // 支付提醒
+  NOTIFICATION_TYPE_PRESCRIPTION = 4;   // 处方提醒
+  NOTIFICATION_TYPE_EXAMINATION = 5;    // 检查提醒
+  NOTIFICATION_TYPE_SURGERY = 6;        // 手术提醒
+  NOTIFICATION_TYPE_FOLLOW_UP = 7;      // 随访提醒
+  NOTIFICATION_TYPE_ANNOUNCEMENT = 8;   // 公告通知
+}
+
+// NotificationStatus represents the status of notification
+enum NotificationStatus {
+  NOTIFICATION_STATUS_UNSPECIFIED = 0;
+  NOTIFICATION_STATUS_UNREAD = 1;   // 未读
+  NOTIFICATION_STATUS_READ = 2;    // 已读
+  NOTIFICATION_STATUS_DELETED = 3; // 已删除
+}
+
+// NotificationPriority represents the priority of notification
+enum NotificationPriority {
+  NOTIFICATION_PRIORITY_UNSPECIFIED = 0;
+  NOTIFICATION_PRIORITY_LOW = 1;      // 低优先级
+  NOTIFICATION_PRIORITY_NORMAL = 2;   // 普通优先级
+  NOTIFICATION_PRIORITY_HIGH = 3;     // 高优先级
+  NOTIFICATION_PRIORITY_URGENT = 4;  // 紧急
+}
+
+// Notification represents a notification message
+message Notification {
+  // Unique identifier
+  int64 id = 1;
+  // User ID (recipient)
+  int64 user_id = 2;
+  // Notification type
+  NotificationType type = 3;
+  // Notification title
+  string title = 4 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Notification content
+  string content = 5 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+  // Notification status
+  NotificationStatus status = 6;
+  // Notification priority
+  NotificationPriority priority = 7;
+  // Reference ID (e.g., appointment ID, payment ID)
+  int64 reference_id = 8;
+  // Reference type (e.g., "appointment", "payment")
+  string reference_type = 9 [(validate.rules).string.max_len = 50];
+  // Extra data (JSON string)
+  string extra_data = 10 [(validate.rules).string.max_len = 2000];
+  // Read timestamp
+  google.protobuf.Timestamp read_at = 11;
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 12;
+}
+
+// SendNotificationRequest is the request for sending a notification
+message SendNotificationRequest {
+  // User ID (recipient)
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+  // Notification type
+  NotificationType type = 2 [(validate.rules).enum.defined_only = true];
+  // Notification title
+  string title = 3 [(validate.rules).string = {min_len: 1, max_len: 200}];
+  // Notification content
+  string content = 4 [(validate.rules).string = {min_len: 1, max_len: 2000}];
+  // Notification priority (default: NORMAL)
+  NotificationPriority priority = 5;
+  // Reference ID (optional)
+  int64 reference_id = 6;
+  // Reference type (optional)
+  string reference_type = 7 [(validate.rules).string.max_len = 50];
+  // Extra data (optional)
+  string extra_data = 8 [(validate.rules).string.max_len = 2000];
+}
+
+// SendNotificationResponse is the response for sending a notification
+message SendNotificationResponse {
+  // Created notification
+  Notification notification = 1;
+  // Whether notification was sent successfully
+  bool success = 2;
+}
+
+// GetNotificationsRequest is the request for getting notifications
+message GetNotificationsRequest {
+  // User ID
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+  // Filter by type (optional)
+  NotificationType type = 2;
+  // Filter by status (optional)
+  NotificationStatus status = 3;
+  // Filter by read/unread (optional)
+  bool unread_only = 4;
+  // Page number (1-indexed)
+  int32 page = 5 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 6 [(validate.rules).int32 = {gte: 1, lte: 100}];
+}
+
+// GetNotificationsResponse is the response for getting notifications
+message GetNotificationsResponse {
+  // List of notifications
+  repeated Notification notifications = 1;
+  // Total count
+  int64 total = 2;
+  // Unread count
+  int32 unread_count = 3;
+  // Current page
+  int32 page = 4;
+  // Page size
+  int32 page_size = 5;
+}
+
+// MarkAsReadRequest is the request for marking notifications as read
+message MarkAsReadRequest {
+  // Notification IDs to mark as read (empty means mark all as read for user)
+  repeated int64 ids = 1;
+  // User ID (required if marking all as read)
+  int64 user_id = 2;
+}
+
+// MarkAsReadResponse is the response for marking notifications as read
+message MarkAsReadResponse {
+  // Whether operation was successful
+  bool success = 1;
+  // Number of notifications marked as read
+  int32 count = 2;
+}
+
+// DeleteNotificationRequest is the request for deleting a notification
+message DeleteNotificationRequest {
+  // Notification ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// DeleteNotificationResponse is the response for deleting a notification
+message DeleteNotificationResponse {
+  // Whether deletion was successful
+  bool success = 1;
+}
+
+// GetUnreadCountRequest is the request for getting unread count
+message GetUnreadCountRequest {
+  // User ID
+  int64 user_id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetUnreadCountResponse is the response for getting unread count
+message GetUnreadCountResponse {
+  // Unread notification count
+  int32 count = 1;
+}
+
+// NotificationService provides notification management operations
+service NotificationService {
+  // SendNotification sends a new notification
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/notifications"
+      body: "*"
+    };
+  }
+
+  // GetNotifications retrieves notifications for a user
+  rpc GetNotifications(GetNotificationsRequest) returns (GetNotificationsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/notifications"
+    };
+  }
+
+  // MarkAsRead marks notifications as read
+  rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/notifications/read"
+      body: "*"
+    };
+  }
+
+  // DeleteNotification deletes a notification
+  rpc DeleteNotification(DeleteNotificationRequest) returns (DeleteNotificationResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/notifications/{id}"
+    };
+  }
+
+  // GetUnreadCount gets unread notification count for a user
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/notifications/unread-count"
+    };
+  }
+}

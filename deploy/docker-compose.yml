@@ -1,0 +1,174 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # MySQL 8.0.X
+  # ============================================
+  mysql:
+    image: mysql:8.0.36
+    container_name: medical-mysql
+    hostname: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: medical_system
+      MYSQL_USER: medical
+      MYSQL_PASSWORD: medical123
+      TZ: Asia/Shanghai
+      MYSQL_AUTHENTICATION_PLUGIN: caching_sha2_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    networks:
+      - medical-network
+    command: >
+      mysqld
+      --default-authentication-plugin=caching_sha2_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb_buffer_pool_size=512M
+      --innodb_log_file_size=128M
+      --max_connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ============================================
+  # Redis 7.4.X
+  # ============================================
+  redis:
+    image: redis:7.4.0-alpine
+    container_name: medical-redis
+    hostname: redis
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - medical-network
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # RabbitMQ
+  # ============================================
+  rabbitmq:
+    image: rabbitmq:3.13.0-management-alpine
+    container_name: medical-rabbitmq
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+      RABBITMQ_DEFAULT_VHOST: medical
+      TZ: Asia/Shanghai
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./config/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./config/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    networks:
+      - medical-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Qdrant 向量数据库
+  # ============================================
+  qdrant:
+    image: qdrant/qdrant:v1.10.1
+    container_name: medical-qdrant
+    hostname: qdrant
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+      QDRANT__LOG_LEVEL: INFO
+      TZ: Asia/Shanghai
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+      - qdrant_snapshots:/qdrant/snapshots
+      - ./config/qdrant/config.yaml:/qdrant/config/production.yaml:ro
+    networks:
+      - medical-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Consul 服务注册
+  # ============================================
+  consul:
+    image: consul:1.18.0
+    container_name: medical-consul
+    hostname: consul
+    environment:
+      CONSUL_BIND_INTERFACE: eth0
+      TZ: Asia/Shanghai
+    ports:
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+      - "8300:8300"
+      - "8301:8301/tcp"
+      - "8301:8301/udp"
+    volumes:
+      - consul_data:/consul/data
+      - ./config/consul/consul-config.json:/consul/config/consul-config.json:ro
+    networks:
+      - medical-network
+    command: >
+      consul agent -dev -ui 
+      -client=0.0.0.0 
+      -bind='{{ GetInterfaceIP "eth0" }}'
+      -config-file=/consul/config/consul-config.json
+    healthcheck:
+      test: ["CMD", "consul", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  qdrant_data:
+    driver: local
+  qdrant_snapshots:
+    driver: local
+  consul_data:
+    driver: local
+
+networks:
+  medical-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

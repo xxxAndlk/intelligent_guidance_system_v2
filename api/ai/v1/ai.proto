@@ -1,0 +1,313 @@
+syntax = "proto3";
+
+package api.ai.v1;
+
+option go_package = "intelligent-guidance-system/api/ai/v1;v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+import "api/ai/v1/diagnosis.proto";
+
+// AI诊断服务
+service AIService {
+    // 创建诊断会话
+    rpc CreateDiagnosisSession(CreateDiagnosisSessionRequest) returns (DiagnosisSession) {
+        option (google.api.http) = {
+            post: "/api/v1/ai/diagnosis/session"
+            body: "*"
+        };
+    }
+
+    // 添加症状
+    rpc AddSymptom(AddSymptomRequest) returns (AddSymptomResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/ai/diagnosis/session/{session_id}/symptoms"
+            body: "*"
+        };
+    }
+
+    // 生成诊断推荐
+    rpc GenerateRecommendation(GenerateRecommendationRequest) returns (GenerateRecommendationResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/ai/diagnosis/session/{session_id}/recommend"
+            body: "*"
+        };
+    }
+
+    // 对话流式响应
+    rpc ChatStream(ChatStreamRequest) returns (stream ChatStreamResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/ai/diagnosis/session/{session_id}/chat/stream"
+            body: "*"
+        };
+    }
+
+    // 获取诊断会话
+    rpc GetDiagnosisSession(GetDiagnosisSessionRequest) returns (DiagnosisSession) {
+        option (google.api.http) = {
+            get: "/api/v1/ai/diagnosis/session/{session_id}"
+        };
+    }
+
+    // 完成会话
+    rpc CompleteSession(CompleteSessionRequest) returns (CompleteSessionResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/ai/diagnosis/session/{session_id}/complete"
+            body: "*"
+        };
+    }
+}
+
+// 创建诊断会话请求
+message CreateDiagnosisSessionRequest {
+    // 用户ID
+    string user_id = 1 [(validate.rules).string.min_len = 1];
+    // 初始症状描述
+    string initial_description = 2;
+    // 渠道来源
+    string channel = 3;
+    // 元数据
+    map<string, string> metadata = 4;
+}
+
+// 添加症状请求
+message AddSymptomRequest {
+    // 会话ID
+    string session_id = 1 [(validate.rules).string.uuid = true];
+    // 症状
+    Symptom symptom = 2 [(validate.rules).message.required = true];
+}
+
+// 添加症状响应
+message AddSymptomResponse {
+    // 会话ID
+    string session_id = 1;
+    // 当前症状列表
+    repeated Symptom symptoms = 2;
+    // 是否需要更多信息
+    bool need_more_info = 3;
+    // 提问
+    string follow_up_question = 4;
+}
+
+// 生成推荐请求
+message GenerateRecommendationRequest {
+    // 会话ID
+    string session_id = 1 [(validate.rules).string.uuid = true];
+    // 是否包含详细分析
+    bool include_detailed_analysis = 2;
+}
+
+// 生成推荐响应
+message GenerateRecommendationResponse {
+    // 会话ID
+    string session_id = 1;
+    // 推荐结果
+    Recommendation recommendation = 2;
+    // 分析说明
+    string analysis_summary = 3;
+}
+
+// 对话流请求
+message ChatStreamRequest {
+    // 会话ID
+    string session_id = 1 [(validate.rules).string.uuid = true];
+    // 用户消息
+    string message = 2 [(validate.rules).string.min_len = 1];
+    // 对话角色
+    ConversationRole role = 3;
+}
+
+// 对话流响应
+message ChatStreamResponse {
+    // 内容类型
+    ContentType content_type = 1;
+    // 内容
+    string content = 2;
+    // 是否完成
+    bool done = 3;
+    // 错误信息
+    string error = 4;
+}
+
+// 获取诊断会话请求
+message GetDiagnosisSessionRequest {
+    // 会话ID
+    string session_id = 1 [(validate.rules).string.uuid = true];
+}
+
+// 完成会话请求
+message CompleteSessionRequest {
+    // 会话ID
+    string session_id = 1 [(validate.rules).string.uuid = true];
+    // 用户反馈评分 1-5
+    int32 rating = 2 [(validate.rules).int32 = {gte: 1, lte: 5}];
+    // 用户反馈文本
+    string feedback = 3;
+}
+
+// 完成会话响应
+message CompleteSessionResponse {
+    // 会话ID
+    string session_id = 1;
+    // 状态
+    SessionStatus status = 2;
+    // 感谢消息
+    string message = 3;
+}
+
+// 内容类型枚举
+enum ContentType {
+    CONTENT_TYPE_UNSPECIFIED = 0;
+    CONTENT_TYPE_TEXT = 1;
+    CONTENT_TYPE_QUESTION = 2;
+    CONTENT_TYPE_RECOMMENDATION = 3;
+    CONTENT_TYPE_SUMMARY = 4;
+}
+
+// 症状
+message Symptom {
+    // 症状ID
+    string id = 1;
+    // 症状名称
+    string name = 2 [(validate.rules).string.min_len = 1];
+    // 症状描述
+    string description = 3;
+    // 严重程度
+    SeverityLevel severity = 4;
+    // 持续时间(天)
+    int32 duration_days = 5;
+    // 位置
+    string location = 6;
+    // 相关属性
+    map<string, string> attributes = 7;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 8;
+}
+
+// 对话
+message Conversation {
+    // 对话ID
+    string id = 1;
+    // 角色
+    ConversationRole role = 2;
+    // 内容
+    string content = 3;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 4;
+    // 元数据
+    map<string, string> metadata = 5;
+}
+
+// 推荐
+message Recommendation {
+    // 推荐ID
+    string id = 1;
+    // 疾病推荐列表
+    repeated DiseaseRecommendation diseases = 2;
+    // 科室推荐列表
+    repeated DepartmentRecommendation departments = 3;
+    // 医生推荐列表
+    repeated DoctorRecommendation doctors = 4;
+    // 药品推荐列表
+    repeated DrugRecommendation drugs = 5;
+    // 建议
+    string advice = 6;
+    // 紧急程度
+    SeverityLevel urgency = 7;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 8;
+}
+
+// 疾病推荐
+message DiseaseRecommendation {
+    // 疾病ID
+    string disease_id = 1;
+    // 疾病名称
+    string name = 2;
+    // 匹配置信度 0-1
+    double confidence = 3 [(validate.rules).double = {gte: 0, lte: 1}];
+    // 匹配症状列表
+    repeated string matched_symptoms = 4;
+    // 疾病描述
+    string description = 5;
+    // 治疗建议
+    string treatment_suggestion = 6;
+}
+
+// 科室推荐
+message DepartmentRecommendation {
+    // 科室ID
+    string department_id = 1;
+    // 科室名称
+    string name = 2;
+    // 推荐优先级 1-10
+    int32 priority = 3 [(validate.rules).int32 = {gte: 1, lte: 10}];
+    // 推荐原因
+    string reason = 4;
+}
+
+// 医生推荐
+message DoctorRecommendation {
+    // 医生ID
+    string doctor_id = 1;
+    // 医生姓名
+    string name = 2;
+    // 职称
+    string title = 3;
+    // 科室
+    string department = 4;
+    // 医院
+    string hospital = 5;
+    // 擅长领域
+    repeated string specialties = 6;
+    // 匹配分数 0-100
+    double match_score = 7 [(validate.rules).double = {gte: 0, lte: 100}];
+    // 可预约时间
+    repeated string available_slots = 8;
+}
+
+// 药品推荐
+message DrugRecommendation {
+    // 药品ID
+    string drug_id = 1;
+    // 药品名称
+    string name = 2;
+    // 通用名
+    string generic_name = 3;
+    // 推荐原因
+    string reason = 4;
+    // 用法用量
+    string dosage = 5;
+    // 注意事项
+    repeated string precautions = 6;
+    // 是否处方药
+    bool is_prescription = 7;
+}
+
+// 严重程度枚举
+enum SeverityLevel {
+    SEVERITY_LEVEL_UNSPECIFIED = 0;
+    SEVERITY_LEVEL_MILD = 1;      // 轻度
+    SEVERITY_LEVEL_MODERATE = 2;  // 中度
+    SEVERITY_LEVEL_SEVERE = 3;    // 重度
+    SEVERITY_LEVEL_CRITICAL = 4;  // 危急
+}
+
+// 会话状态枚举
+enum SessionStatus {
+    SESSION_STATUS_UNSPECIFIED = 0;
+    SESSION_STATUS_COLLECTING = 1;   // 收集信息中
+    SESSION_STATUS_ANALYZING = 2;    // 分析中
+    SESSION_STATUS_RECOMMENDED = 3;  // 已推荐
+    SESSION_STATUS_COMPLETED = 4;    // 已完成
+}
+
+// 对话角色枚举
+enum ConversationRole {
+    CONVERSATION_ROLE_UNSPECIFIED = 0;
+    CONVERSATION_ROLE_USER = 1;      // 用户
+    CONVERSATION_ROLE_ASSISTANT = 2; // 助手
+    CONVERSATION_ROLE_SYSTEM = 3;    // 系统
+}

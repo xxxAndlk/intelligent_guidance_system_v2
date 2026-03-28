@@ -1,0 +1,286 @@
+syntax = "proto3";
+
+package api.patient.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/patient/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// Patient service for medical system
+service PatientService {
+  // RegisterPatient - Patient registration
+  rpc RegisterPatient(RegisterPatientRequest) returns (RegisterPatientResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/patients/register"
+      body: "*"
+    };
+  }
+
+  // LoginPatient - Patient login
+  rpc LoginPatient(LoginPatientRequest) returns (LoginPatientResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/patients/login"
+      body: "*"
+    };
+  }
+
+  // GetPatient - Get patient by ID
+  rpc GetPatient(GetPatientRequest) returns (GetPatientResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/patients/{id}"
+    };
+  }
+
+  // UpdatePatient - Update patient info
+  rpc UpdatePatient(UpdatePatientRequest) returns (UpdatePatientResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/patients/{id}"
+      body: "*"
+    };
+  }
+
+  // ListPatients - List patients with pagination
+  rpc ListPatients(ListPatientsRequest) returns (ListPatientsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/patients"
+    };
+  }
+
+  // DeletePatient - Soft delete patient
+  rpc DeletePatient(DeletePatientRequest) returns (DeletePatientResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/patients/{id}"
+    };
+  }
+
+  // GetPatientMedicalHistory - Get patient's medical history
+  rpc GetPatientMedicalHistory(GetPatientMedicalHistoryRequest) returns (GetPatientMedicalHistoryResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/patients/{id}/medical-history"
+    };
+  }
+
+  // AddAllergy - Add allergy record
+  rpc AddAllergy(AddAllergyRequest) returns (AddAllergyResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/patients/{patient_id}/allergies"
+      body: "*"
+    };
+  }
+}
+
+// Address message for patient location
+message Address {
+  // Province name
+  string province = 1 [(validate.rules).string.max_len = 50];
+  // City name
+  string city = 2 [(validate.rules).string.max_len = 50];
+  // District name
+  string district = 3 [(validate.rules).string.max_len = 50];
+  // Detail address
+  string detail = 4 [(validate.rules).string.max_len = 200];
+}
+
+// MedicalHistory message for patient medical records
+message MedicalHistory {
+  // Disease name
+  string disease_name = 1 [(validate.rules).string = {min_len: 1, max_len: 100}];
+  // Diagnose date
+  google.protobuf.Timestamp diagnose_date = 2;
+  // Treatment description
+  string treatment = 3 [(validate.rules).string.max_len = 500];
+}
+
+// Allergy message for patient allergy records
+message Allergy {
+  // Allergen name
+  string allergen = 1 [(validate.rules).string = {min_len: 1, max_len: 100}];
+  // Severity level: mild, moderate, severe
+  string severity = 2 [(validate.rules).string = {in: ["mild", "moderate", "severe"]}];
+  // Allergic reaction description
+  string reaction = 3 [(validate.rules).string.max_len = 500];
+}
+
+// Patient message with all patient information
+message Patient {
+  // Unique identifier
+  int64 id = 1;
+  // WeChat openid
+  string openid = 2;
+  // Login username
+  string username = 3;
+  // Login password (hashed)
+  string password = 4;
+  // Real name
+  string name = 5 [(validate.rules).string.max_len = 50];
+  // Age
+  int32 age = 6 [(validate.rules).int32 = {gte: 0, lte: 150}];
+  // Phone number
+  string phone = 7 [(validate.rules).string.pattern = "^1[3-9]\\d{9}$"];
+  // Email address
+  string email = 8 [(validate.rules).string.email = true];
+  // ID card number
+  string id_card = 9 [(validate.rules).string.pattern = "^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]$"];
+  // Avatar URL
+  string avatar = 10;
+  // Address information
+  Address address = 11;
+  // Status: 0-inactive, 1-active, 2-deleted
+  int32 status = 12;
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 13;
+  // Updated timestamp
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+// RegisterPatientRequest
+message RegisterPatientRequest {
+  // Login username
+  string username = 1 [(validate.rules).string = {min_len: 3, max_len: 50}];
+  // Login password
+  string password = 2 [(validate.rules).string = {min_len: 6, max_len: 100}];
+  // Real name
+  string name = 3 [(validate.rules).string = {min_len: 1, max_len: 50}];
+  // Phone number
+  string phone = 4 [(validate.rules).string.pattern = "^1[3-9]\\d{9}$"];
+  // Email address (optional)
+  string email = 5;
+  // ID card number
+  string id_card = 6 [(validate.rules).string.pattern = "^[1-9]\\d{5}(18|19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]$"];
+  // Age
+  int32 age = 7;
+  // Avatar URL (optional)
+  string avatar = 8;
+  // Address (optional)
+  Address address = 9;
+}
+
+// RegisterPatientResponse
+message RegisterPatientResponse {
+  // Created patient info
+  Patient patient = 1;
+  // JWT token for authentication
+  string token = 2;
+}
+
+// LoginPatientRequest
+message LoginPatientRequest {
+  // Login username
+  string username = 1 [(validate.rules).string = {min_len: 1}];
+  // Login password
+  string password = 2 [(validate.rules).string = {min_len: 1}];
+}
+
+// LoginPatientResponse
+message LoginPatientResponse {
+  // Patient info
+  Patient patient = 1;
+  // JWT token for authentication
+  string token = 2;
+}
+
+// GetPatientRequest
+message GetPatientRequest {
+  // Patient ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetPatientResponse
+message GetPatientResponse {
+  // Patient info
+  Patient patient = 1;
+}
+
+// UpdatePatientRequest
+message UpdatePatientRequest {
+  // Patient ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Real name
+  string name = 2 [(validate.rules).string.max_len = 50];
+  // Age
+  int32 age = 3 [(validate.rules).int32 = {gte: 0, lte: 150}];
+  // Phone number
+  string phone = 4 [(validate.rules).string.pattern = "^1[3-9]\\d{9}$"];
+  // Email address
+  string email = 5 [(validate.rules).string.email = true];
+  // ID card number
+  string id_card = 6;
+  // Avatar URL
+  string avatar = 7;
+  // Address information
+  Address address = 8;
+}
+
+// UpdatePatientResponse
+message UpdatePatientResponse {
+  // Updated patient info
+  Patient patient = 1;
+}
+
+// ListPatientsRequest
+message ListPatientsRequest {
+  // Page number (1-indexed)
+  int32 page = 1 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+  // Filter by name (optional)
+  string name = 3;
+  // Filter by phone (optional)
+  string phone = 4;
+  // Filter by status (optional)
+  int32 status = 5;
+}
+
+// ListPatientsResponse
+message ListPatientsResponse {
+  // List of patients
+  repeated Patient patients = 1;
+  // Total count
+  int64 total = 2;
+  // Current page
+  int32 page = 3;
+  // Page size
+  int32 page_size = 4;
+}
+
+// DeletePatientRequest
+message DeletePatientRequest {
+  // Patient ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// DeletePatientResponse
+message DeletePatientResponse {
+  // Whether deletion was successful
+  bool success = 1;
+}
+
+// GetPatientMedicalHistoryRequest
+message GetPatientMedicalHistoryRequest {
+  // Patient ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetPatientMedicalHistoryResponse
+message GetPatientMedicalHistoryResponse {
+  // List of medical history records
+  repeated MedicalHistory medical_history = 1;
+}
+
+// AddAllergyRequest
+message AddAllergyRequest {
+  // Patient ID
+  int64 patient_id = 1 [(validate.rules).int64.gt = 0];
+  // Allergy information
+  Allergy allergy = 2 [(validate.rules).message.required = true];
+}
+
+// AddAllergyResponse
+message AddAllergyResponse {
+  // Created allergy record
+  Allergy allergy = 1;
+  // Allergy record ID
+  int64 id = 2;
+}

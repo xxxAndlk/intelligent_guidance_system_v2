@@ -1,0 +1,27 @@
+storage:
+  storage_path: ./storage
+  snapshots_path: ./snapshots
+  mmap_threshold_kb: 20000
+  
+  vectors:
+    default_segment_number: 2
+    max_optimization_threads: 2
+    on_disk: false
+    quantization_config:
+      scalar:
+        type: int8
+        quantile: 0.99
+        always_ram: true
+
+service:
+  http_port: 6333
+  grpc_port: 6334
+  read_consistency_level: majority
+
+performance:
+  max_search_threads: 4
+  max_optimization_threads: 2
+  max_batch_size: 100
+  disable_write: false
+
+log_level: INFO

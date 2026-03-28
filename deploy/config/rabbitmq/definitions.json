@@ -1,0 +1,118 @@
+{
+  "rabbit_version": "3.13.0",
+  "users": [
+    {
+      "name": "admin",
+      "password_hash": "YWRtaW4xMjM=",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "medical"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "admin",
+      "vhost": "medical",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "medical.events",
+      "vhost": "medical",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "diagnosis.completed",
+      "vhost": "medical",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "medical.completed",
+      "vhost": "medical",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "notification.send",
+      "vhost": "medical",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "medical.direct",
+      "vhost": "medical",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "medical.fanout",
+      "vhost": "medical",
+      "type": "fanout",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "medical.topic",
+      "vhost": "medical",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "medical.direct",
+      "vhost": "medical",
+      "destination": "medical.events",
+      "destination_type": "queue",
+      "routing_key": "event",
+      "arguments": {}
+    },
+    {
+      "source": "medical.topic",
+      "vhost": "medical",
+      "destination": "diagnosis.completed",
+      "destination_type": "queue",
+      "routing_key": "diagnosis.completed",
+      "arguments": {}
+    },
+    {
+      "source": "medical.topic",
+      "vhost": "medical",
+      "destination": "medical.completed",
+      "destination_type": "queue",
+      "routing_key": "medical.completed",
+      "arguments": {}
+    },
+    {
+      "source": "medical.topic",
+      "vhost": "medical",
+      "destination": "notification.send",
+      "destination_type": "queue",
+      "routing_key": "notification.send",
+      "arguments": {}
+    }
+  ]
+}

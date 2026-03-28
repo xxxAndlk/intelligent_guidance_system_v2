@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/common/v1;commonv1";
+
+// Status enum for operation results
+enum Status {
+  SUCCESS = 0;
+  FAILED = 1;
+  PENDING = 2;
+}
+
+// PageRequest for pagination
+message PageRequest {
+  int32 page = 1;        // Page number (1-based)
+  int32 page_size = 2;   // Number of items per page
+}
+
+// PageResponse for pagination metadata
+message PageResponse {
+  int64 total = 1;       // Total number of items
+  int32 page = 2;         // Current page number
+  int32 page_size = 3;    // Number of items per page
+}
+
+// ListRequest with pagination and filters
+message ListRequest {
+  PageRequest page = 1;
+  map<string, string> filters = 2;  // Key-value filters
+}
+
+// ListResponse with pagination info and results
+message ListResponse {
+  PageResponse page = 1;
+  repeated string results = 2;       // JSON-encoded results (generic)
+}
+
+// Empty message for void responses
+message Empty {}
+
+// ErrorResponse for error details
+message ErrorResponse {
+  int32 code = 1;        // Error code
+  string message = 2;    // Error message
+  string details = 3;    // Additional error details
+}

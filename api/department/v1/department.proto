@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package department.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/department/v1;v1";
+
+// DepartmentType enum for department types
+enum DepartmentType {
+  DEPARTMENT_TYPE_UNSPECIFIED = 0;
+  DEPARTMENT_TYPE_OUTPATIENT = 1;  // 门诊
+  DEPARTMENT_TYPE_INPATIENT = 2;   // 住院
+}
+
+// DepartmentStatus enum for department status
+enum DepartmentStatus {
+  DEPARTMENT_STATUS_UNSPECIFIED = 0;
+  DEPARTMENT_STATUS_ACTIVE = 1;    // 运行中
+  DEPARTMENT_STATUS_RESTING = 2;   // 休息中
+  DEPARTMENT_STATUS_DISABLED = 3;  // 已停用
+}
+
+// Department message
+message Department {
+  int64 id = 1;
+  string name = 2;
+  string introduction = 3;
+  int64 person_in_charge_id = 4;
+  string phone = 5;
+  string address = 6;
+  DepartmentType type = 7;
+  int32 staff_count = 8;
+  DepartmentStatus status = 9;
+  double registration_fee = 10;
+  double expert_registration_fee = 11;
+  int64 duty_doctor_id = 12;
+}
+
+// DepartmentDoctor message for department-doctor relationship
+message DepartmentDoctor {
+  int64 department_id = 1;
+  int64 doctor_id = 2;
+  bool is_duty = 3;
+}
+
+// GetDepartment RPC
+message GetDepartmentRequest {
+  int64 id = 1;
+}
+
+message GetDepartmentResponse {
+  Department department = 1;
+}
+
+// ListDepartments RPC
+message ListDepartmentsRequest {
+  DepartmentType type = 1;
+  DepartmentStatus status = 2;
+  string name = 3;
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message ListDepartmentsResponse {
+  repeated Department departments = 1;
+  int32 total = 2;
+}
+
+// CreateDepartment RPC
+message CreateDepartmentRequest {
+  string name = 1;
+  string introduction = 2;
+  int64 person_in_charge_id = 3;
+  string phone = 4;
+  string address = 5;
+  DepartmentType type = 6;
+  int32 staff_count = 7;
+  DepartmentStatus status = 8;
+  double registration_fee = 9;
+  double expert_registration_fee = 10;
+  int64 duty_doctor_id = 11;
+}
+
+message CreateDepartmentResponse {
+  Department department = 1;
+}
+
+// UpdateDepartment RPC
+message UpdateDepartmentRequest {
+  int64 id = 1;
+  string name = 2;
+  string introduction = 3;
+  int64 person_in_charge_id = 4;
+  string phone = 5;
+  string address = 6;
+  DepartmentType type = 7;
+  int32 staff_count = 8;
+  DepartmentStatus status = 9;
+  double registration_fee = 10;
+  double expert_registration_fee = 11;
+  int64 duty_doctor_id = 12;
+}
+
+message UpdateDepartmentResponse {
+  Department department = 1;
+}
+
+// DeleteDepartment RPC
+message DeleteDepartmentRequest {
+  int64 id = 1;
+}
+
+message DeleteDepartmentResponse {
+  bool success = 1;
+}
+
+// AssignDoctor RPC
+message AssignDoctorRequest {
+  int64 department_id = 1;
+  int64 doctor_id = 2;
+  bool is_duty = 3;
+}
+
+message AssignDoctorResponse {
+  bool success = 1;
+  DepartmentDoctor department_doctor = 2;
+}
+
+// RemoveDoctor RPC
+message RemoveDoctorRequest {
+  int64 department_id = 1;
+  int64 doctor_id = 2;
+}
+
+message RemoveDoctorResponse {
+  bool success = 1;
+}
+
+// DepartmentService definition
+service DepartmentService {
+  // Get department by ID
+  rpc GetDepartment(GetDepartmentRequest) returns (GetDepartmentResponse);
+  
+  // List departments with filters
+  rpc ListDepartments(ListDepartmentsRequest) returns (ListDepartmentsResponse);
+  
+  // Create new department
+  rpc CreateDepartment(CreateDepartmentRequest) returns (CreateDepartmentResponse);
+  
+  // Update department info
+  rpc UpdateDepartment(UpdateDepartmentRequest) returns (UpdateDepartmentResponse);
+  
+  // Delete department
+  rpc DeleteDepartment(DeleteDepartmentRequest) returns (DeleteDepartmentResponse);
+  
+  // Assign doctor to department
+  rpc AssignDoctor(AssignDoctorRequest) returns (AssignDoctorResponse);
+  
+  // Remove doctor from department
+  rpc RemoveDoctor(RemoveDoctorRequest) returns (RemoveDoctorResponse);
+}

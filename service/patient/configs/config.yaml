@@ -1,0 +1,41 @@
+server:
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 30s
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 30s
+
+data:
+  database:
+    driver: mysql
+    source: root:password@tcp(127.0.0.1:3306)/medical_system?charset=utf8mb4&parseTime=True&loc=Local
+    max_idle_conns: 10
+    max_open_conns: 100
+    conn_max_lifetime: 3600s
+
+  redis:
+    addr: 127.0.0.1:6379
+    password: ""
+    db: 0
+    pool_size: 100
+    min_idle_conns: 10
+
+jwt:
+  key: patient-service-jwt-secret-key-2026
+  expire: 24h
+
+service:
+  name: patient-service
+  version: v1.0.0
+  id: patient-service-001
+
+registry:
+  consul:
+    address: 127.0.0.1:8500
+    scheme: http
+
+log:
+  level: info
+  format: json
+  output: stdout

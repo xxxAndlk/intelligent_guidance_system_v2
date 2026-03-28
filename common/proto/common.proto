@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "intelligent_guidance_system_v2/common/proto;common";
+
+message Empty {}
+
+message PaginationRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message PaginationResponse {
+  int64 total = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}
+
+message UserInfo {
+  int64 user_id = 1;
+  string username = 2;
+  int32 user_type = 3;
+  repeated string roles = 4;
+}
+
+message ErrorResponse {
+  int32 code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}
+
+message SuccessResponse {
+  int32 code = 1;
+  string message = 2;
+}
+
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+message TimeRange {
+  Timestamp start = 1;
+  Timestamp end = 2;
+}
+
+message KeyValue {
+  string key = 1;
+  string value = 2;
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+message Int64List {
+  repeated int64 values = 1;
+}
+
+message Int32List {
+  repeated int32 values = 1;
+}
+
+message FloatList {
+  repeated float values = 1;
+}
+
+message DoubleList {
+  repeated double values = 1;
+}
+
+message IDRequest {
+  int64 id = 1;
+}
+
+message IDsRequest {
+  repeated int64 ids = 1;
+}
+
+message NameRequest {
+  string name = 1;
+}
+
+message SearchRequest {
+  string query = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  repeated string fields = 4;
+}
+
+message CountResponse {
+  int64 count = 1;
+}
+
+message ExistsResponse {
+  bool exists = 1;
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+  string message = 2;
+}
+
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_ASC = 1;
+  SORT_ORDER_DESC = 2;
+}
+
+message SortField {
+  string field = 1;
+  SortOrder order = 2;
+}
+
+message FilterCondition {
+  string field = 1;
+  string operator = 2;
+  string value = 3;
+}
+
+message Filter {
+  repeated FilterCondition conditions = 1;
+  string logic = 2;
+}
+
+message Vector {
+  repeated float values = 1;
+}
+
+message VectorSearchRequest {
+  Vector query_vector = 1;
+  int32 top_k = 2;
+  Filter filter = 3;
+}
+
+message VectorSearchResult {
+  int64 id = 1;
+  float score = 2;
+  map<string, string> metadata = 3;
+}
+
+message VectorSearchResponse {
+  repeated VectorSearchResult results = 1;
+}
+
+service CommonService {
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}

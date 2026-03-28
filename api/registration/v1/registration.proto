@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package api.registration.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/registration/v1;v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// RegistrationType represents the type of registration
+enum RegistrationType {
+  REGISTRATION_TYPE_UNSPECIFIED = 0;
+  REGISTRATION_TYPE_NORMAL = 1;   // 普通挂号
+  REGISTRATION_TYPE_EXPERT = 2;   // 专家挂号
+}
+
+// RegistrationStatus represents the status of registration
+enum RegistrationStatus {
+  REGISTRATION_STATUS_UNSPECIFIED = 0;
+  REGISTRATION_STATUS_PENDING = 1;    // 待确认
+  REGISTRATION_STATUS_CONFIRMED = 2;  // 已确认
+  REGISTRATION_STATUS_CANCELLED = 3;  // 已取消
+  REGISTRATION_STATUS_COMPLETED = 4;  // 已完成
+}
+
+// Registration represents a patient registration
+message Registration {
+  // Unique identifier
+  int64 id = 1;
+  // Patient ID
+  int64 patient_id = 2;
+  // Doctor ID
+  int64 doctor_id = 3;
+  // Department ID
+  int64 department_id = 4;
+  // Registration type
+  RegistrationType type = 5;
+  // Registration status
+  RegistrationStatus status = 6;
+  // Appointment time
+  google.protobuf.Timestamp appointment_time = 7;
+  // Registration fee
+  double fee = 8;
+  // Queue number
+  int32 queue_number = 9;
+  // Created timestamp
+  google.protobuf.Timestamp created_at = 10;
+  // Updated timestamp
+  google.protobuf.Timestamp updated_at = 11;
+}
+
+// CreateRegistrationRequest is the request for creating a registration
+message CreateRegistrationRequest {
+  // Patient ID
+  int64 patient_id = 1 [(validate.rules).int64.gt = 0];
+  // Doctor ID
+  int64 doctor_id = 2 [(validate.rules).int64.gt = 0];
+  // Department ID
+  int64 department_id = 3 [(validate.rules).int64.gt = 0];
+  // Registration type
+  RegistrationType type = 4 [(validate.rules).enum.defined_only = true];
+  // Appointment time
+  google.protobuf.Timestamp appointment_time = 5;
+}
+
+// CreateRegistrationResponse is the response for creating a registration
+message CreateRegistrationResponse {
+  // Created registration
+  Registration registration = 1;
+}
+
+// CancelRegistrationRequest is the request for cancelling a registration
+message CancelRegistrationRequest {
+  // Registration ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+  // Cancellation reason
+  string reason = 2 [(validate.rules).string.max_len = 500];
+}
+
+// CancelRegistrationResponse is the response for cancelling a registration
+message CancelRegistrationResponse {
+  // Updated registration
+  Registration registration = 1;
+  // Whether cancellation was successful
+  bool success = 2;
+}
+
+// GetRegistrationRequest is the request for getting a registration
+message GetRegistrationRequest {
+  // Registration ID
+  int64 id = 1 [(validate.rules).int64.gt = 0];
+}
+
+// GetRegistrationResponse is the response for getting a registration
+message GetRegistrationResponse {
+  // Registration info
+  Registration registration = 1;
+}
+
+// ListRegistrationsRequest is the request for listing registrations
+message ListRegistrationsRequest {
+  // Filter by patient ID (optional)
+  int64 patient_id = 1;
+  // Filter by doctor ID (optional)
+  int64 doctor_id = 2;
+  // Filter by department ID (optional)
+  int64 department_id = 3;
+  // Filter by status (optional)
+  RegistrationStatus status = 4;
+  // Filter by type (optional)
+  RegistrationType type = 5;
+  // Start date filter (optional)
+  google.protobuf.Timestamp start_date = 6;
+  // End date filter (optional)
+  google.protobuf.Timestamp end_date = 7;
+  // Page number (1-indexed)
+  int32 page = 8 [(validate.rules).int32 = {gte: 1}];
+  // Page size
+  int32 page_size = 9 [(validate.rules).int32 = {gte: 1, lte: 100}];
+}
+
+// ListRegistrationsResponse is the response for listing registrations
+message ListRegistrationsResponse {
+  // List of registrations
+  repeated Registration registrations = 1;
+  // Total count
+  int64 total = 2;
+  // Current page
+  int32 page = 3;
+  // Page size
+  int32 page_size = 4;
+}
+
+// RegistrationService provides registration management operations
+service RegistrationService {
+  // CreateRegistration creates a new registration
+  rpc CreateRegistration(CreateRegistrationRequest) returns (CreateRegistrationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/registrations"
+      body: "*"
+    };
+  }
+
+  // CancelRegistration cancels an existing registration
+  rpc CancelRegistration(CancelRegistrationRequest) returns (CancelRegistrationResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/registrations/{id}/cancel"
+      body: "*"
+    };
+  }
+
+  // GetRegistration retrieves a registration by ID
+  rpc GetRegistration(GetRegistrationRequest) returns (GetRegistrationResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/registrations/{id}"
+    };
+  }
+
+  // ListRegistrations lists registrations with pagination
+  rpc ListRegistrations(ListRegistrationsRequest) returns (ListRegistrationsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/registrations"
+    };
+  }
+}

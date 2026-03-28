@@ -1,0 +1,20 @@
+server:
+  name: auth-service
+  http_port: 8006
+  grpc_port: 9006
+
+database:
+  url: root:password@tcp(localhost:3306)/auth_db?charset=utf8mb4&parseTime=True&loc=Local
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+jwt:
+  secret: your-secret-key-change-in-production
+  expiry: 86400
+
+log:
+  level: info
+  format: json

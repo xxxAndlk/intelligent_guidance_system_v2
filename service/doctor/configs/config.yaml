@@ -1,0 +1,44 @@
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 10s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 10s
+
+data:
+  database:
+    driver: mysql
+    source: root:password@tcp(localhost:3306)/intelligent_guidance?charset=utf8mb4&parseTime=True&loc=Local
+    max_idle_conns: 10
+    max_open_conns: 100
+    conn_max_lifetime: 3600s
+
+  redis:
+    addr: localhost:6379
+    password: ""
+    db: 0
+    read_timeout: 0.2s
+    write_timeout: 0.2s
+
+log:
+  level: info
+  format: json
+  output: stdout
+
+service:
+  name: doctor-service
+  version: v1.0.0
+  metadata:
+    environment: development
+
+registry:
+  consul:
+    address: localhost:8500
+    scheme: http
+    health_check_interval: 10s
+    health_check_timeout: 5s
+
+auth:
+  jwt_secret: your-secret-key
+  token_expire: 24h

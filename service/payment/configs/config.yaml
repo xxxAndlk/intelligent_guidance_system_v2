@@ -1,0 +1,16 @@
+server:
+  name: payment-service
+  http_port: 8010
+  grpc_port: 9010
+
+database:
+  url: root:password@tcp(localhost:3306)/payment_db?charset=utf8mb4&parseTime=True&loc=Local
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+log:
+  level: info
+  format: json

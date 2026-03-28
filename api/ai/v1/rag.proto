@@ -1,0 +1,341 @@
+syntax = "proto3";
+
+package api.ai.v1;
+
+option go_package = "intelligent-guidance-system/api/ai/v1;v1";
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+import "validate/validate.proto";
+
+// RAG检索增强服务
+service RAGService {
+    // 搜索疾病
+    rpc SearchDiseases(SearchDiseasesRequest) returns (SearchDiseasesResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/rag/diseases/search"
+            body: "*"
+        };
+    }
+
+    // 搜索医生
+    rpc SearchDoctors(SearchDoctorsRequest) returns (SearchDoctorsResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/rag/doctors/search"
+            body: "*"
+        };
+    }
+
+    // 搜索药品
+    rpc SearchDrugs(SearchDrugsRequest) returns (SearchDrugsResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/rag/drugs/search"
+            body: "*"
+        };
+    }
+
+    // 搜索相似医疗记录
+    rpc SearchSimilarMedicalRecords(SearchSimilarMedicalRecordsRequest) returns (SearchSimilarMedicalRecordsResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/rag/records/similar"
+            body: "*"
+        };
+    }
+
+    // 批量索引文档
+    rpc BatchIndexDocuments(BatchIndexRequest) returns (BatchIndexResponse) {
+        option (google.api.http) = {
+            post: "/api/v1/rag/documents/batch-index"
+            body: "*"
+        };
+    }
+}
+
+// 搜索请求基类
+message SearchRequest {
+    // 搜索查询
+    string query = 1 [(validate.rules).string.min_len = 1];
+    // 返回数量
+    int32 top_k = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+    // 相似度阈值 0-1
+    double similarity_threshold = 3 [(validate.rules).double = {gte: 0, lte: 1}];
+    // 过滤条件
+    map<string, string> filters = 4;
+}
+
+// 搜索响应基类
+message SearchResponse {
+    // 搜索结果列表
+    repeated SearchResult results = 1;
+    // 总数
+    int32 total = 2;
+    // 搜索耗时(ms)
+    int64 latency_ms = 3;
+    // 查询向量
+    repeated float query_embedding = 4;
+}
+
+// 搜索结果
+message SearchResult {
+    // 文档ID
+    string id = 1;
+    // 文档内容
+    string content = 2;
+    // 相似度分数 0-1
+    double score = 3 [(validate.rules).double = {gte: 0, lte: 1}];
+    // 元数据
+    map<string, string> metadata = 4;
+    // 高亮片段
+    repeated string highlights = 5;
+    // 来源
+    string source = 6;
+}
+
+// 搜索疾病请求
+message SearchDiseasesRequest {
+    // 搜索查询
+    string query = 1 [(validate.rules).string.min_len = 1];
+    // 返回数量
+    int32 top_k = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+    // 相似度阈值
+    double similarity_threshold = 3;
+    // 症状列表(用于精确匹配)
+    repeated string symptoms = 4;
+    // 科室过滤
+    string department = 5;
+}
+
+// 搜索疾病响应
+message SearchDiseasesResponse {
+    // 结果列表
+    repeated DiseaseSearchResult results = 1;
+    // 总数
+    int32 total = 2;
+    // 搜索耗时(ms)
+    int64 latency_ms = 3;
+}
+
+// 疾病搜索结果
+message DiseaseSearchResult {
+    // 疾病ID
+    string disease_id = 1;
+    // 疾病名称
+    string name = 2;
+    // ICD编码
+    string icd_code = 3;
+    // 相似度分数
+    double score = 4;
+    // 描述
+    string description = 5;
+    // 症状列表
+    repeated string symptoms = 6;
+    // 所属科室
+    repeated string departments = 7;
+    // 高亮内容
+    repeated string highlights = 8;
+}
+
+// 搜索医生请求
+message SearchDoctorsRequest {
+    // 搜索查询
+    string query = 1 [(validate.rules).string.min_len = 1];
+    // 返回数量
+    int32 top_k = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+    // 科室过滤
+    string department = 3;
+    // 医院过滤
+    string hospital = 4;
+    // 职称过滤
+    string title = 5;
+    // 专业领域
+    repeated string specialties = 6;
+}
+
+// 搜索医生响应
+message SearchDoctorsResponse {
+    // 结果列表
+    repeated DoctorSearchResult results = 1;
+    // 总数
+    int32 total = 2;
+    // 搜索耗时(ms)
+    int64 latency_ms = 3;
+}
+
+// 医生搜索结果
+message DoctorSearchResult {
+    // 医生ID
+    string doctor_id = 1;
+    // 姓名
+    string name = 2;
+    // 职称
+    string title = 3;
+    // 科室
+    string department = 4;
+    // 医院
+    string hospital = 5;
+    // 相似度分数
+    double score = 6;
+    // 擅长领域
+    repeated string specialties = 7;
+    // 简介
+    string introduction = 8;
+    // 评分
+    double rating = 9;
+    // 接诊量
+    int64 patient_count = 10;
+}
+
+// 搜索药品请求
+message SearchDrugsRequest {
+    // 搜索查询
+    string query = 1 [(validate.rules).string.min_len = 1];
+    // 返回数量
+    int32 top_k = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+    // 药品类型过滤
+    string drug_type = 3;
+    // 是否处方药
+    optional bool is_prescription = 4;
+    // 适应症过滤
+    repeated string indications = 5;
+}
+
+// 搜索药品响应
+message SearchDrugsResponse {
+    // 结果列表
+    repeated DrugSearchResult results = 1;
+    // 总数
+    int32 total = 2;
+    // 搜索耗时(ms)
+    int64 latency_ms = 3;
+}
+
+// 药品搜索结果
+message DrugSearchResult {
+    // 药品ID
+    string drug_id = 1;
+    // 药品名称
+    string name = 2;
+    // 通用名
+    string generic_name = 3;
+    // 相似度分数
+    double score = 4;
+    // 适应症
+    repeated string indications = 5;
+    // 禁忌症
+    repeated string contraindications = 6;
+    // 是否处方药
+    bool is_prescription = 7;
+    // 剂型
+    string dosage_form = 8;
+    // 规格
+    string specification = 9;
+    // 生产厂家
+    string manufacturer = 10;
+}
+
+// 搜索相似医疗记录请求
+message SearchSimilarMedicalRecordsRequest {
+    // 症状描述
+    string symptom_description = 1 [(validate.rules).string.min_len = 1];
+    // 返回数量
+    int32 top_k = 2 [(validate.rules).int32 = {gte: 1, lte: 100}];
+    // 相似度阈值
+    double similarity_threshold = 3;
+    // 时间范围(天)
+    int32 days_range = 4;
+    // 是否包含已脱敏记录
+    bool include_anonymized = 5;
+}
+
+// 搜索相似医疗记录响应
+message SearchSimilarMedicalRecordsResponse {
+    // 结果列表
+    repeated MedicalRecordResult results = 1;
+    // 总数
+    int32 total = 2;
+    // 搜索耗时(ms)
+    int64 latency_ms = 3;
+}
+
+// 医疗记录结果
+message MedicalRecordResult {
+    // 记录ID
+    string record_id = 1;
+    // 相似度分数
+    double score = 2;
+    // 症状描述(脱敏)
+    string symptom_summary = 3;
+    // 诊断结果(脱敏)
+    string diagnosis_summary = 4;
+    // 治疗方案摘要
+    string treatment_summary = 5;
+    // 就诊科室
+    string department = 6;
+    // 记录时间
+    google.protobuf.Timestamp record_time = 7;
+}
+
+// 批量索引请求
+message BatchIndexRequest {
+    // 文档列表
+    repeated Document documents = 1 [(validate.rules).repeated.min_items = 1];
+    // 索引名称
+    string index_name = 2 [(validate.rules).string.min_len = 1];
+    // 是否覆盖已有文档
+    bool overwrite = 3;
+    // 是否异步处理
+    bool async = 4;
+}
+
+// 文档
+message Document {
+    // 文档ID
+    string id = 1 [(validate.rules).string.min_len = 1];
+    // 文档内容
+    string content = 2 [(validate.rules).string.min_len = 1];
+    // 文档类型
+    DocumentType type = 3;
+    // 元数据
+    map<string, string> metadata = 4;
+    // 向量(可选,外部提供)
+    repeated float embedding = 5;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 6;
+    // 更新时间
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+// 文档类型枚举
+enum DocumentType {
+    DOCUMENT_TYPE_UNSPECIFIED = 0;
+    DOCUMENT_TYPE_DISEASE = 1;      // 疾病文档
+    DOCUMENT_TYPE_DRUG = 2;          // 药品文档
+    DOCUMENT_TYPE_DOCTOR = 3;        // 医生文档
+    DOCUMENT_TYPE_MEDICAL_RECORD = 4; // 医疗记录
+    DOCUMENT_TYPE_GUIDELINE = 5;     // 诊疗指南
+    DOCUMENT_TYPE_ARTICLE = 6;       // 医学文章
+}
+
+// 批量索引响应
+message BatchIndexResponse {
+    // 成功数量
+    int32 success_count = 1;
+    // 失败数量
+    int32 failed_count = 2;
+    // 失败详情
+    repeated IndexFailure failures = 3;
+    // 任务ID(异步处理时)
+    string task_id = 4;
+    // 处理耗时(ms)
+    int64 latency_ms = 5;
+}
+
+// 索引失败详情
+message IndexFailure {
+    // 文档ID
+    string document_id = 1;
+    // 错误码
+    string error_code = 2;
+    // 错误信息
+    string error_message = 3;
+}

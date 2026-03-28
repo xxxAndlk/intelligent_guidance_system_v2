@@ -1,0 +1,458 @@
+syntax = "proto3";
+
+package api.ai.v1;
+
+option go_package = "intelligent-guidance-system/api/ai/v1;v1";
+
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+// 诊断会话
+message DiagnosisSession {
+    // 会话ID
+    string id = 1;
+    // 用户ID
+    string user_id = 2 [(validate.rules).string.min_len = 1];
+    // 会话状态
+    SessionStatus status = 3;
+    // 症状列表
+    repeated Symptom symptoms = 4;
+    // 对话历史
+    repeated Conversation conversations = 5;
+    // 推荐结果
+    Recommendation recommendation = 6;
+    // 严重程度评估
+    SeverityLevel severity_assessment = 7;
+    // 渠道来源
+    string channel = 8;
+    // 元数据
+    map<string, string> metadata = 9;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 10;
+    // 更新时间
+    google.protobuf.Timestamp updated_at = 11;
+    // 完成时间
+    google.protobuf.Timestamp completed_at = 12;
+}
+
+// 诊断分析结果
+message DiagnosisAnalysis {
+    // 分析ID
+    string id = 1;
+    // 会话ID
+    string session_id = 2;
+    // 分析类型
+    AnalysisType type = 3;
+    // 输入数据
+    string input_data = 4;
+    // 分析结果
+    string result = 5;
+    // 置信度
+    double confidence = 6 [(validate.rules).double = {gte: 0, lte: 1}];
+    // 模型版本
+    string model_version = 7;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 8;
+}
+
+// 分析类型枚举
+enum AnalysisType {
+    ANALYSIS_TYPE_UNSPECIFIED = 0;
+    ANALYSIS_TYPE_SYMPTOM_EXTRACTION = 1;  // 症状提取
+    ANALYSIS_TYPE_DISEASE_PREDICTION = 2;  // 疾病预测
+    ANALYSIS_TYPE_SEVERITY_ASSESSMENT = 3;  // 严重程度评估
+    ANALYSIS_TYPE_DEPARTMENT_RECOMMEND = 4; // 科室推荐
+    ANALYSIS_TYPE_DOCTOR_MATCHING = 5;      // 医生匹配
+    ANALYSIS_TYPE_DRUG_RECOMMEND = 6;       // 药品推荐
+    ANALYSIS_TYPE_FOLLOW_UP = 7;            // 随访建议
+}
+
+// 症状详情(扩展)
+message SymptomDetail {
+    // 症状ID
+    string id = 1;
+    // 症状名称
+    string name = 2 [(validate.rules).string.min_len = 1];
+    // 症状编码(SNOMED/ICD)
+    string code = 3;
+    // 症状分类
+    SymptomCategory category = 4;
+    // 详细描述
+    string description = 5;
+    // 严重程度
+    SeverityLevel severity = 6;
+    // 持续时间
+    Duration duration = 7;
+    // 位置
+    BodyLocation location = 8;
+    // 关联症状
+    repeated string related_symptoms = 9;
+    // 诱因
+    repeated string triggers = 10;
+    // 缓解因素
+    repeated string relieving_factors = 11;
+    // 加重因素
+    repeated string aggravating_factors = 12;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 13;
+}
+
+// 症状分类枚举
+enum SymptomCategory {
+    SYMPTOM_CATEGORY_UNSPECIFIED = 0;
+    SYMPTOM_CATEGORY_GENERAL = 1;        // 全身症状
+    SYMPTOM_CATEGORY_RESPIRATORY = 2;    // 呼吸系统
+    SYMPTOM_CATEGORY_CARDIOVASCULAR = 3; // 心血管系统
+    SYMPTOM_CATEGORY_DIGESTIVE = 4;      // 消化系统
+    SYMPTOM_CATEGORY_NERVOUS = 5;         // 神经系统
+    SYMPTOM_CATEGORY_MUSCULOSKELETAL = 6; // 肌肉骨骼系统
+    SYMPTOM_CATEGORY_SKIN = 7;            // 皮肤
+    SYMPTOM_CATEGORY_EYE = 8;             // 眼部
+    SYMPTOM_CATEGORY_EAR_NOSE_THROAT = 9; // 耳鼻喉
+    SYMPTOM_CATEGORY_UROLOGICAL = 10;     // 泌尿系统
+    SYMPTOM_CATEGORY_PSYCHIATRIC = 11;   // 精神心理
+}
+
+// 持续时间
+message Duration {
+    // 数值
+    double value = 1;
+    // 单位
+    DurationUnit unit = 2;
+}
+
+// 持续时间单位枚举
+enum DurationUnit {
+    DURATION_UNIT_UNSPECIFIED = 0;
+    DURATION_UNIT_HOURS = 1;
+    DURATION_UNIT_DAYS = 2;
+    DURATION_UNIT_WEEKS = 3;
+    DURATION_UNIT_MONTHS = 4;
+    DURATION_UNIT_YEARS = 5;
+}
+
+// 身体部位
+message BodyLocation {
+    // 主要部位
+    BodyRegion region = 1;
+    // 具体位置描述
+    string description = 2;
+    // 侧别
+    Laterality laterality = 3;
+}
+
+// 身体区域枚举
+enum BodyRegion {
+    BODY_REGION_UNSPECIFIED = 0;
+    BODY_REGION_HEAD = 1;
+    BODY_REGION_NECK = 2;
+    BODY_REGION_CHEST = 3;
+    BODY_REGION_ABDOMEN = 4;
+    BODY_REGION_BACK = 5;
+    BODY_REGION_PELVIS = 6;
+    BODY_REGION_UPPER_LIMB = 7;
+    BODY_REGION_LOWER_LIMB = 8;
+    BODY_REGION_WHOLE_BODY = 9;
+}
+
+// 侧别枚举
+enum Laterality {
+    LATERALITY_UNSPECIFIED = 0;
+    LATERALITY_LEFT = 1;
+    LATERALITY_RIGHT = 2;
+    LATERALITY_BILATERAL = 3;
+    LATERALITY_CENTER = 4;
+}
+
+// 诊断上下文
+message DiagnosisContext {
+    // 患者基本信息
+    PatientInfo patient_info = 1;
+    // 病史
+    MedicalHistory medical_history = 2;
+    // 用药史
+    repeated MedicationRecord medications = 3;
+    // 过敏史
+    repeated AllergyRecord allergies = 4;
+    // 家族史
+    repeated FamilyHistoryRecord family_history = 5;
+    // 生活习惯
+    LifestyleInfo lifestyle = 6;
+}
+
+// 患者信息
+message PatientInfo {
+    // 患者ID
+    string patient_id = 1;
+    // 年龄
+    int32 age = 2 [(validate.rules).int32 = {gte: 0, lte: 150}];
+    // 性别
+    Gender gender = 3;
+    // 身高(cm)
+    float height = 4;
+    // 体重(kg)
+    float weight = 5;
+    // 血型
+    string blood_type = 6;
+    // 婚姻状态
+    MaritalStatus marital_status = 7;
+    // 职业
+    string occupation = 8;
+}
+
+// 性别枚举
+enum Gender {
+    GENDER_UNSPECIFIED = 0;
+    GENDER_MALE = 1;
+    GENDER_FEMALE = 2;
+    GENDER_OTHER = 3;
+}
+
+// 婚姻状态枚举
+enum MaritalStatus {
+    MARITAL_STATUS_UNSPECIFIED = 0;
+    MARITAL_STATUS_SINGLE = 1;
+    MARITAL_STATUS_MARRIED = 2;
+    MARITAL_STATUS_DIVORCED = 3;
+    MARITAL_STATUS_WIDOWED = 4;
+}
+
+// 病史
+message MedicalHistory {
+    // 既往病史
+    repeated DiseaseRecord past_diseases = 1;
+    // 手术史
+    repeated SurgeryRecord surgeries = 2;
+    // 住院史
+    repeated HospitalizationRecord hospitalizations = 3;
+    // 疫苗接种记录
+    repeated VaccinationRecord vaccinations = 4;
+}
+
+// 疾病记录
+message DiseaseRecord {
+    // 疾病名称
+    string name = 1;
+    // ICD编码
+    string icd_code = 2;
+    // 确诊时间
+    google.protobuf.Timestamp diagnosed_at = 3;
+    // 治愈时间
+    google.protobuf.Timestamp cured_at = 4;
+    // 状态
+    DiseaseStatus status = 5;
+    // 备注
+    string notes = 6;
+}
+
+// 疾病状态枚举
+enum DiseaseStatus {
+    DISEASE_STATUS_UNSPECIFIED = 0;
+    DISEASE_STATUS_ACTIVE = 1;     // 活动期
+    DISEASE_STATUS_REMISSION = 2;  // 缓解期
+    DISEASE_STATUS_RESOLVED = 3;   // 已治愈
+    DISEASE_STATUS_CHRONIC = 4;    // 慢性
+}
+
+// 手术记录
+message SurgeryRecord {
+    // 手术名称
+    string name = 1;
+    // 手术时间
+    google.protobuf.Timestamp performed_at = 2;
+    // 医院
+    string hospital = 3;
+    // 主刀医生
+    string surgeon = 4;
+    // 备注
+    string notes = 5;
+}
+
+// 住院记录
+message HospitalizationRecord {
+    // 医院
+    string hospital = 1;
+    // 科室
+    string department = 2;
+    // 入院时间
+    google.protobuf.Timestamp admitted_at = 3;
+    // 出院时间
+    google.protobuf.Timestamp discharged_at = 4;
+    // 诊断
+    string diagnosis = 5;
+    // 备注
+    string notes = 6;
+}
+
+// 疫苗接种记录
+message VaccinationRecord {
+    // 疫苗名称
+    string name = 1;
+    // 接种时间
+    google.protobuf.Timestamp vaccinated_at = 2;
+    // 剂次
+    int32 dose = 3;
+    // 接种机构
+    string facility = 4;
+}
+
+// 用药记录
+message MedicationRecord {
+    // 药品名称
+    string name = 1;
+    // 剂量
+    string dosage = 2;
+    // 频次
+    string frequency = 3;
+    // 开始时间
+    google.protobuf.Timestamp started_at = 4;
+    // 结束时间
+    google.protobuf.Timestamp ended_at = 5;
+    // 是否在用
+    bool is_current = 6;
+    // 备注
+    string notes = 7;
+}
+
+// 过敏记录
+message AllergyRecord {
+    // 过敏原
+    string allergen = 1;
+    // 过敏类型
+    AllergyType type = 2;
+    // 反应描述
+    string reaction = 3;
+    // 严重程度
+    SeverityLevel severity = 4;
+    // 确诊时间
+    google.protobuf.Timestamp diagnosed_at = 5;
+}
+
+// 过敏类型枚举
+enum AllergyType {
+    ALLERGY_TYPE_UNSPECIFIED = 0;
+    ALLERGY_TYPE_DRUG = 1;       // 药物过敏
+    ALLERGY_TYPE_FOOD = 2;       // 食物过敏
+    ALLERGY_TYPE_ENVIRONMENTAL = 3; // 环境过敏
+    ALLERGY_TYPE_OTHER = 4;      // 其他
+}
+
+// 家族史记录
+message FamilyHistoryRecord {
+    // 亲属关系
+    FamilyRelation relation = 1;
+    // 疾病名称
+    string disease = 2;
+    // 发病年龄
+    int32 onset_age = 3;
+    // 备注
+    string notes = 4;
+}
+
+// 家属关系枚举
+enum FamilyRelation {
+    FAMILY_RELATION_UNSPECIFIED = 0;
+    FAMILY_RELATION_FATHER = 1;
+    FAMILY_RELATION_MOTHER = 2;
+    FAMILY_RELATION_SIBLING = 3;
+    FAMILY_RELATION_CHILD = 4;
+    FAMILY_RELATION_GRANDFATHER = 5;
+    FAMILY_RELATION_GRANDMOTHER = 6;
+    FAMILY_RELATION_UNCLE = 7;
+    FAMILY_RELATION_AUNT = 8;
+    FAMILY_RELATION_COUSIN = 9;
+}
+
+// 生活习惯信息
+message LifestyleInfo {
+    // 吸烟情况
+    SmokingStatus smoking = 1;
+    // 饮酒情况
+    DrinkingStatus drinking = 2;
+    // 运动频率
+    ExerciseFrequency exercise = 3;
+    // 睡眠时长(小时/天)
+    float sleep_hours = 4;
+    // 饮食偏好
+    repeated string dietary_preferences = 5;
+    // 职业
+    string occupation = 6;
+    // 工作环境
+    string work_environment = 7;
+}
+
+// 吸烟状态枚举
+enum SmokingStatus {
+    SMOKING_STATUS_UNSPECIFIED = 0;
+    SMOKING_STATUS_NEVER = 1;
+    SMOKING_STATUS_FORMER = 2;
+    SMOKING_STATUS_CURRENT = 3;
+}
+
+// 饮酒状态枚举
+enum DrinkingStatus {
+    DRINKING_STATUS_UNSPECIFIED = 0;
+    DRINKING_STATUS_NEVER = 1;
+    DRINKING_STATUS_OCCASIONAL = 2;
+    DRINKING_STATUS_REGULAR = 3;
+    DRINKING_STATUS_HEAVY = 4;
+}
+
+// 运动频率枚举
+enum ExerciseFrequency {
+    EXERCISE_FREQUENCY_UNSPECIFIED = 0;
+    EXERCISE_FREQUENCY_NEVER = 1;
+    EXERCISE_FREQUENCY_RARELY = 2;    // 每月1-2次
+    EXERCISE_FREQUENCY_SOMETIMES = 3; // 每周1-2次
+    EXERCISE_FREQUENCY_OFTEN = 4;     // 每周3-4次
+    EXERCISE_FREQUENCY_DAILY = 5;     // 每天
+}
+
+// 随访计划
+message FollowUpPlan {
+    // 计划ID
+    string id = 1;
+    // 会话ID
+    string session_id = 2;
+    // 随访时间
+    google.protobuf.Timestamp follow_up_at = 3;
+    // 随访类型
+    FollowUpType type = 4;
+    // 随访内容
+    string content = 5;
+    // 提醒方式
+    ReminderMethod reminder_method = 6;
+    // 状态
+    FollowUpStatus status = 7;
+    // 创建时间
+    google.protobuf.Timestamp created_at = 8;
+}
+
+// 随访类型枚举
+enum FollowUpType {
+    FOLLOW_UP_TYPE_UNSPECIFIED = 0;
+    FOLLOW_UP_TYPE_SYMPTOM_CHECK = 1;     // 症状复查
+    FOLLOW_UP_TYPE_MEDICATION_REVIEW = 2; // 用药复查
+    FOLLOW_UP_TYPE_TEST_RESULT = 3;       // 检查结果
+    FOLLOW_UP_TYPE_TREATMENT_EFFECT = 4;  // 治疗效果
+    FOLLOW_UP_TYPE_GENERAL = 5;           // 常规随访
+}
+
+// 提醒方式枚举
+enum ReminderMethod {
+    REMINDER_METHOD_UNSPECIFIED = 0;
+    REMINDER_METHOD_SMS = 1;
+    REMINDER_METHOD_PHONE = 2;
+    REMINDER_METHOD_APP_PUSH = 3;
+    REMINDER_METHOD_EMAIL = 4;
+    REMINDER_METHOD_WECHAT = 5;
+}
+
+// 随访状态枚举
+enum FollowUpStatus {
+    FOLLOW_UP_STATUS_UNSPECIFIED = 0;
+    FOLLOW_UP_STATUS_PENDING = 1;
+    FOLLOW_UP_STATUS_COMPLETED = 2;
+    FOLLOW_UP_STATUS_CANCELLED = 3;
+    FOLLOW_UP_STATUS_MISSED = 4;
+}

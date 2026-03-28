@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package doctor.v1;
+
+option go_package = "intelligent_guidance_system_v2/api/doctor/v1;v1";
+
+// Position enum for doctor positions
+enum Position {
+  POSITION_UNSPECIFIED = 0;
+  POSITION_RESIDENT = 1;      // 住院医师
+  POSITION_ATTENDING = 2;     // 主治医师
+  POSITION_ASSOCIATE_CHIEF = 3; // 副主任医师
+  POSITION_CHIEF = 4;         // 主任医师
+}
+
+// Title enum for doctor titles
+enum Title {
+  TITLE_UNSPECIFIED = 0;
+  TITLE_JUNIOR = 1;    // 初级
+  TITLE_MIDDLE = 2;    // 中级
+  TITLE_SENIOR = 3;    // 高级
+  TITLE_EXPERT = 4;    // 专家
+}
+
+// Doctor status enum
+enum DoctorStatus {
+  DOCTOR_STATUS_UNSPECIFIED = 0;
+  DOCTOR_STATUS_ACTIVE = 1;    // 在职
+  DOCTOR_STATUS_LEAVE = 2;     // 休假
+  DOCTOR_STATUS_RESIGNED = 3;   // 离职
+  DOCTOR_STATUS_SUSPENDED = 4; // 停诊
+}
+
+// Doctor message
+message Doctor {
+  int64 id = 1;
+  string employee_id = 2;
+  string name = 3;
+  string phone = 4;
+  string avatar = 5;
+  Position position = 6;
+  Title title = 7;
+  string specialty = 8;
+  int64 department_id = 9;
+  bool is_expert = 10;
+  DoctorStatus status = 11;
+  string intro = 12;
+}
+
+// TimeSlot message for schedule time slots
+message TimeSlot {
+  string start_time = 1;  // Format: HH:MM
+  string end_time = 2;    // Format: HH:MM
+  bool is_available = 3;
+}
+
+// Schedule message for doctor schedule
+message Schedule {
+  string date = 1;           // Format: YYYY-MM-DD
+  repeated TimeSlot time_slots = 2;
+}
+
+// Role message for doctor roles
+message Role {
+  string code = 1;
+  string name = 2;
+  string data_scope = 3;  // Data scope for role permissions
+}
+
+// GetDoctor RPC
+message GetDoctorRequest {
+  int64 id = 1;
+}
+
+message GetDoctorResponse {
+  Doctor doctor = 1;
+}
+
+// ListDoctors RPC
+message ListDoctorsRequest {
+  int64 department_id = 1;
+  Position position = 2;
+  Title title = 3;
+  DoctorStatus status = 4;
+  string name = 5;
+  int32 page = 6;
+  int32 page_size = 7;
+}
+
+message ListDoctorsResponse {
+  repeated Doctor doctors = 1;
+  int32 total = 2;
+}
+
+// UpdateDoctor RPC
+message UpdateDoctorRequest {
+  int64 id = 1;
+  string name = 2;
+  string phone = 3;
+  string avatar = 4;
+  Position position = 5;
+  Title title = 6;
+  string specialty = 7;
+  int64 department_id = 8;
+  bool is_expert = 9;
+  DoctorStatus status = 10;
+  string intro = 11;
+}
+
+message UpdateDoctorResponse {
+  Doctor doctor = 1;
+}
+
+// SetSchedule RPC
+message SetScheduleRequest {
+  int64 doctor_id = 1;
+  Schedule schedule = 2;
+}
+
+message SetScheduleResponse {
+  bool success = 1;
+}
+
+// GetSchedule RPC
+message GetScheduleRequest {
+  int64 doctor_id = 1;
+  string date = 2;  // Format: YYYY-MM-DD, optional
+}
+
+message GetScheduleResponse {
+  repeated Schedule schedules = 1;
+}
+
+// AssignRole RPC
+message AssignRoleRequest {
+  int64 doctor_id = 1;
+  string role_code = 2;
+}
+
+message AssignRoleResponse {
+  bool success = 1;
+  Role role = 2;
+}
+
+// DoctorService definition
+service DoctorService {
+  // Get doctor by ID
+  rpc GetDoctor(GetDoctorRequest) returns (GetDoctorResponse);
+  
+  // List doctors with filters
+  rpc ListDoctors(ListDoctorsRequest) returns (ListDoctorsResponse);
+  
+  // Update doctor info
+  rpc UpdateDoctor(UpdateDoctorRequest) returns (UpdateDoctorResponse);
+  
+  // Set doctor schedule
+  rpc SetSchedule(SetScheduleRequest) returns (SetScheduleResponse);
+  
+  // Get doctor schedule
+  rpc GetSchedule(GetScheduleRequest) returns (GetScheduleResponse);
+  
+  // Assign role to doctor
+  rpc AssignRole(AssignRoleRequest) returns (AssignRoleResponse);
+}

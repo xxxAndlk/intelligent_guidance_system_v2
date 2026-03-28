@@ -1,0 +1,16 @@
+server:
+  name: registration-service
+  http_port: 8007
+  grpc_port: 9007
+
+database:
+  url: root:password@tcp(localhost:3306)/registration_db?charset=utf8mb4&parseTime=True&loc=Local
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+log:
+  level: info
+  format: json
